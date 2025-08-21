@@ -208,6 +208,26 @@
             50% { transform: translateY(-5px); }
         }
 
+        /* Styles for the new case study section */
+        .card-container {
+            height: 400px;
+            overflow-y: auto;
+            scrollbar-width: thin; /* For Firefox */
+            scrollbar-color: #d1d5db #f3f4f6; /* For Firefox */
+        }
+        .card-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .card-container::-webkit-scrollbar-track {
+            background: #f3f4f6;
+            border-radius: 10px;
+        }
+        .card-container::-webkit-scrollbar-thumb {
+            background-color: #d1d5db;
+            border-radius: 10px;
+            border: 2px solid #f3f4f6;
+        }
+
         /* Mobile-specific styles */
         @media (max-width: 768px) {
             .container {
@@ -311,107 +331,111 @@
     <!-- Case Studies Section -->
     <section id="case-studies" class="section bg-white">
         <div class="container">
-            <h2 class="text-4xl md:text-5xl font-bold text-center mb-12 md:mb-20">Case Studies</h2>
+            <!-- Header -->
+            <h2 class="text-4xl font-bold text-gray-800 text-center mb-6">Product Case Studies</h2>
+            <p class="text-center text-gray-500 mb-6">A deep dive into key projects I’ve led to drive growth and user engagement.</p>
 
-            <!-- Case Study 1 -->
-            <div class="case-study">
-                <h3 class="text-2xl md:text-3xl font-bold mb-4">Case Study 1: Turning a Curious Rookie into a Daily Fantasy Sports Player</h3>
-                <div class="grid md:grid-cols-2 gap-8 md:gap-12">
-                    <div>
-                        <div class="mb-4 md:mb-8">
-                            <h4 class="text-xl font-semibold mb-2">Problem Statement</h4>
-                            <p class="text-gray-500 text-sm md:text-base">
-                                The Indian fantasy sports market has a significant retention cliff, with 95% of new players quitting before Day 30. The challenge was to build an app that addresses core user anxieties—fear of losing money, choice paralysis, and lack of knowledge—to turn curious rookies into daily, engaged players.
-                            </p>
-                        </div>
-                        <div class="mb-4 md:mb-8">
-                            <h4 class="text-xl font-semibold mb-2">Approach & Solution</h4>
-                            <p class="text-gray-500 text-sm md:text-base">
-                                The approach was to focus on a user-centric design that built trust and reduced friction. We introduced a **Smart-Start** feature for risk-free onboarding and a **Built-in Coach** (AI Quick-Scout) to provide data-driven suggestions, making the game more accessible. A **Progression Engine** with daily missions was implemented to foster long-term habit formation.
-                            </p>
-                        </div>
-                        <div class="mb-4 md:mb-8">
-                            <h4 class="text-xl font-semibold mb-2">Key Pain Points Identified</h4>
-                            <ul class="list-disc list-inside text-gray-500 text-sm md:text-base">
-                                <li>**Choice Overload:** "I don't know who to pick."</li>
-                                <li>**Fear of Loss:** "What if I lose my money?"</li>
-                                <li>**Lack of Knowledge:** "I can't compete with the pros."</li>
-                            </ul>
+            <!-- Container for both cards -->
+            <div class="flex flex-col md:flex-row space-y-8 md:space-y-0 md:space-x-8">
+
+                <!-- Card 1: Fantasy Sports App -->
+                <div class="w-full md:w-1/2 bg-gray-50 p-6 rounded-2xl border border-gray-200 flex flex-col shadow-md">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4.25a.75.75 0 00.413.684l3.5 1.75a.75.75 0 00.674-1.348L11 9.49V6z" clip-rule="evenodd" />
+                        </svg>
+                        Turning Rookies into Daily Players
+                    </h2>
+                    <div class="card-container text-gray-600 space-y-4">
+                        <p class="text-sm leading-relaxed">
+                            <strong>Problem:</strong> The fantasy sports market faced a significant retention cliff, with 95% of new players quitting before Day 30. We identified core user anxieties as the root cause: <strong>Choice Overload</strong>, <strong>Fear of Losing Money</strong>, and <strong>Lack of Knowledge</strong>.
+                        </p>
+                        <p class="text-sm leading-relaxed">
+                            <strong>Approach:</strong> We shifted focus from competing on large prizes to <strong>building trust and reducing friction</strong>. We developed a user-centric solution to solve core anxieties.
+                        </p>
+                        <ul class="list-disc list-inside text-sm leading-relaxed space-y-1 ml-4">
+                            <li><strong>Smart-Start:</strong> A risk-free onboarding experience to eliminate choice overload.</li>
+                            <li><strong>Built-in Coach:</strong> An AI-powered feature to provide data-driven suggestions and increase user confidence.</li>
+                            <li><strong>Progression Engine:</strong> Daily missions and streaks to foster long-term habit formation.</li>
+                        </ul>
+                        <p class="text-sm leading-relaxed">
+                            <strong>Impact:</strong> By addressing user anxiety, we built a loyal user base. This approach led to a significant improvement in retention metrics, making the app a compelling alternative in a crowded market.
+                        </p>
+                        <div class="bg-gray-100 p-4 rounded-xl mt-4">
+                            <h3 class="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m-6 0h6"></path>
+                                </svg>
+                                Key Metrics Improvement:
+                            </h3>
+                            <table class="w-full text-sm text-left text-gray-600">
+                                <thead>
+                                    <tr class="border-b border-gray-300">
+                                        <th class="py-2">Metric</th>
+                                        <th class="py-2">Benchmark</th>
+                                        <th class="py-2">Our Target</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="py-2">Day-1 Active Users</td>
+                                        <td class="py-2">32%</td>
+                                        <td class="py-2">45%</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-2">Day-30 Active Users</td>
+                                        <td class="py-2">7%</td>
+                                        <td class="py-2">12%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                    <div>
-                        <div class="mb-4 md:mb-8">
-                            <h4 class="text-xl font-semibold mb-2">Prioritization & Metrics</h4>
-                            <p class="text-gray-500 text-sm md:text-base">
-                                Features were prioritized to address the most critical retention issues first. The "Smart-Start" and "Frictionless Money" features were prioritized for the MVP to improve Day-1 and Day-7 retention. The success was measured by key metrics, with a target of **45% Day-1 active users** (vs. 32% benchmark) and **12% Day-30 active users** (vs. 7% benchmark).
-                            </p>
-                        </div>
-                        <div class="mb-4 md:mb-8">
-                            <h4 class="text-xl font-semibold mb-2">Impact</h4>
-                            <p class="text-gray-500 text-sm md:text-base">
-                                By solving user anxiety instead of just competing on prize money, the app created a loyal user base. The focus on guidance, progress, and trust led to a significant improvement in retention rates, making the app a compelling alternative in a crowded market.
-                            </p>
-                        </div>
-                        <div class="mb-4 md:mb-8">
-                            <h4 class="text-xl font-semibold mb-2">Personal Touch</h4>
-                            <p class="text-gray-500 text-sm md:text-base">
-                                This project felt deeply important because it wasn't just about building another fantasy app; it was about solving a fundamental human problem—anxiety. We were creating a safe, easy, and fun space for users to learn and grow. That shift from a product-first to a user-anxiety-first mindset was incredibly rewarding.
-                            </p>
-                        </div>
-                        <a href="https://docs.google.com/presentation/d/1neDuNyTigXJ9UhwxSCSe_uWEqKvBhPPIEeDJu02iTOw/edit?usp=sharing" target="_blank" class="inline-block mt-2 px-6 py-2 bg-gray-900 text-white rounded-full font-semibold text-sm hover:bg-blue-600 transition-colors duration-200">
-                            View Presentation Deck
+                    <div class="mt-4 text-center">
+                        <a href="https://canvas.google.com/contentFetch?contentFetchId=uploaded:New Fantasy Sports App.pptx" target="_blank" class="inline-block px-6 py-2 bg-blue-600 text-white rounded-full font-semibold text-sm hover:bg-blue-700 transition-colors duration-200">
+                            View Full Case Study
                         </a>
                     </div>
                 </div>
-            </div>
 
-            <!-- Case Study 2 -->
-            <div class="case-study">
-                <h3 class="text-2xl md:text-3xl font-bold mb-4">Case Study 2: Personalized Training Plans in Strava</h3>
-                <div class="grid md:grid-cols-2 gap-8 md:gap-12">
-                    <div>
-                        <div class="mb-4 md:mb-8">
-                            <h4 class="text-xl font-semibold mb-2">Problem Statement</h4>
-                            <p class="text-gray-500 text-sm md:text-base">
-                                Strava is a dominant social network for athletes, but it lacked a structured, data-driven training feature. The objective was to introduce a personalized training plan that leveraged user activity data across multiple sports to provide tailored programs for events like a full marathon or half marathon, and to differentiate Strava in the market.
-                            </p>
-                        </div>
-                        <div class="mb-4 md:mb-8">
-                            <h4 class="text-xl font-semibold mb-2">Approach & Solution</h4>
-                            <p class="text-gray-500 text-sm md:text-base">
-                                The approach was to integrate a structured training module into Strava's existing platform. The solution involved an **Adaptive Training Plan** that dynamically adjusts based on a user's past activities and progress, including cross-training activities like cycling and strength training, promoting a holistic approach to fitness and injury prevention.
-                            </p>
-                        </div>
-                        <div class="mb-4 md:mb-8">
-                            <h4 class="text-xl font-semibold mb-2">Key Pain Points Identified</h4>
-                            <ul class="list-disc list-inside text-gray-500 text-sm md:text-base">
-                                <li>**Generic Plans:** "A one-size-fits-all plan doesn't work for me."</li>
-                                <li>**Lack of Guidance:** "I don't know where to start or how to train properly."</li>
-                                <li>**Risk of Injury:** "I'm worried about getting injured with an unguided training plan."</li>
+                <!-- Card 2: Strava Personalized Training Plan -->
+                <div class="w-full md:w-1/2 bg-gray-50 p-6 rounded-2xl border border-gray-200 flex flex-col shadow-md">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                        Personalized Training for Every Athlete
+                    </h2>
+                    <div class="card-container text-gray-600 space-y-4">
+                        <p class="text-sm leading-relaxed">
+                            <strong>Problem:</strong> Users training for endurance events (like a marathon, which I know you love!) or specific milestones often lack tailored, data-driven training plans that account for multiple sports.
+                        </p>
+                        <p class="text-sm leading-relaxed">
+                            <strong>Approach:</strong> We developed an <strong>AI-powered personalized training plan feature</strong> for Strava. This feature leverages user activity data across various sports (running, cycling, strength training) to create adaptive programs for different fitness goals.
+                        </p>
+                        <div class="bg-gray-100 p-4 rounded-xl mt-4">
+                            <h3 class="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                                Key Feature Highlights:
+                            </h3>
+                            <ul class="list-disc list-inside text-sm leading-relaxed space-y-1 ml-4">
+                                <li><strong>Adaptive Plans:</strong> Tailored plans for goals like a first 10K, half marathon, or full marathon.</li>
+                                <li><strong>Cross-Training:</strong> Integrates activities like yoga and strength training for a holistic regimen.</li>
+                                <li><strong>AI-Powered Insights:</strong> Future scope included injury prediction and virtual coaching based on historical data.</li>
                             </ul>
                         </div>
+                        <p class="text-sm leading-relaxed">
+                            <strong>Impact:</strong> This feature differentiated Strava by offering a holistic, adaptive, and personalized experience. It helped users achieve their fitness goals more efficiently, driving higher completion rates and overall engagement with the platform and community.
+                        </p>
+                        <p class="text-sm leading-relaxed">
+                            <strong>Success Metrics:</strong> We measured success through user adoption rates, training program completion rates, improvement in performance metrics (e.g., pace), and overall user retention.
+                        </p>
                     </div>
-                    <div>
-                        <div class="mb-4 md:mb-8">
-                            <h4 class="text-xl font-semibold mb-2">Prioritization & Metrics</h4>
-                            <p class="text-gray-500 text-sm md:text-base">
-                                The MVP focused on core functionality: goal selection, a basic adaptive plan, and a clean user journey. The success of the feature was measured by **user adoption rate**, **program completion rates**, and **improvement in user running performance** (e.g., race completion rates and pace).
-                            </p>
-                        </div>
-                        <div class="mb-4 md:mb-8">
-                            <h4 class="text-xl font-semibold mb-2">Impact</h4>
-                            <p class="text-gray-500 text-sm md:text-base">
-                                This feature differentiates Strava by offering a holistic, adaptive, and personalized training experience. It leverages the platform's unique data insights to help users achieve their fitness goals while engaging with the community, ultimately driving higher user retention and engagement.
-                            </p>
-                        </div>
-                        <div class="mb-4 md:mb-8">
-                            <h4 class="text-xl font-semibold mb-2">Personal Touch</h4>
-                            <p class="text-gray-500 text-sm md:text-base">
-                                Having run a marathon myself, I know the dedication and planning required. This project resonated with me on a personal level. I felt like I was building a tool I would have genuinely needed and appreciated during my own training, and the opportunity to merge my personal passion for running with my professional expertise was incredibly fulfilling.
-                            </p>
-                        </div>
-                        <a href="https://drive.google.com/file/d/184GKqJY6_g6e3eh4IimwedJtvhp6vWv6/view?usp=sharing" target="_blank" class="inline-block mt-2 px-6 py-2 bg-gray-900 text-white rounded-full font-semibold text-sm hover:bg-blue-600 transition-colors duration-200">
-                            View PRD
+                    <div class="mt-4 text-center">
+                        <a href="https://canvas.google.com/contentFetch?contentFetchId=uploaded:1744127147081.pdf" target="_blank" class="inline-block px-6 py-2 bg-blue-600 text-white rounded-full font-semibold text-sm hover:bg-blue-700 transition-colors duration-200">
+                            View Full Case Study
                         </a>
                     </div>
                 </div>
