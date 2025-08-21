@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abhishek Singh | Product Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f5f7;
+            color: #1d1d1f;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .header-sticky {
+            position: sticky;
+            top: 0;
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            transition: background-color 0.3s ease-in-out;
+        }
+        .nav-link {
+            transition: color 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .nav-link:hover {
+            color: #007aff;
+        }
+        .section {
+            padding: 8rem 0;
+        }
+        .metric-card {
+            background-color: #ffffff;
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 4px 60px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 80px rgba(0, 0, 0, 0.1);
+        }
+        .case-study {
+            background-color: #ffffff;
+            border-radius: 20px;
+            padding: 3rem;
+            margin-bottom: 4rem;
+            box-shadow: 0 4px 60px rgba(0, 0, 0, 0.05);
+        }
+        .contact-card {
+            background-color: #ffffff;
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 4px 60px rgba(0, 0, 0, 0.05);
+        }
+        .social-link {
+            transition: transform 0.2s ease;
+        }
+        .social-link:hover {
+            transform: scale(1.1);
+        }
+        .text-gradient {
+            background-image: linear-gradient(to right, #007aff, #33a7ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        /* Chat Assistant Styles */
+        #chat-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 2000;
+        }
+        #chat-button {
+            background-color: #007aff;
+            color: white;
+            padding: 1rem;
+            border-radius: 9999px;
+            box-shadow: 0 10px 20px rgba(0, 122, 255, 0.3);
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        #chat-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 15px 30px rgba(0, 122, 255, 0.4);
+        }
+        #chat-window {
+            width: 380px;
+            height: 500px;
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transform: scale(0.95);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            transform-origin: bottom right;
+        }
+        #chat-window.open {
+            transform: scale(1);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #chat-header {
+            background-color: #007aff;
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top-left-radius: 1rem;
+            border-top-right-radius: 1rem;
+        }
+        #chat-close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        #chat-messages {
+            flex-grow: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .chat-bubble {
+            max-width: 85%;
+            padding: 0.75rem;
+            border-radius: 12px;
+            word-wrap: break-word;
+        }
+        .chat-bubble.user {
+            background-color: #e5e5ea;
+            color: #1d1d1f;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        .chat-bubble.assistant {
+            background-color: #007aff;
+            color: white;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        #chat-input-form {
+            padding: 1rem;
+            border-top: 1px solid #e5e5ea;
+            display: flex;
+            gap: 8px;
+        }
+        #chat-input {
+            flex-grow: 1;
+            padding: 0.75rem;
+            border-radius: 20px;
+            border: 1px solid #dcdce0;
+            outline: none;
+        }
+        #chat-submit-btn {
+            background-color: #007aff;
+            color: white;
+            border-radius: 9999px;
+            padding: 0 1rem;
+            transition: background-color 0.2s ease-in-out;
+        }
+        #chat-submit-btn:hover {
+            background-color: #33a7ff;
+        }
+        .loader-dots {
+            display: flex;
+            align-items: center;
+        }
+        .loader-dots span {
+            width: 8px;
+            height: 8px;
+            background-color: #dcdce0;
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: dot-animation 1s infinite;
+        }
+        .loader-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .loader-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes dot-animation {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+
+    <!-- Sticky Navigation Bar -->
+    <nav class="header-sticky border-b border-gray-200">
+        <div class="container flex justify-between items-center py-4">
+            <h1 class="text-2xl font-bold"><span class="text-gradient">Abhishek Singh</span></h1>
+            <div class="flex space-x-8 text-lg font-medium">
+                <a href="#homepage" class="nav-link">Home</a>
+                <a href="#case-studies" class="nav-link">Case Studies</a>
+                <a href="#contact" class="nav-link">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Homepage Section -->
+    <main id="homepage" class="section">
+        <div class="container text-center max-w-4xl">
+            <h2 class="text-6xl font-extrabold tracking-tight leading-tight mb-6">
+                Driving user-centric growth through data and empathy.
+            </h2>
+            <p class="text-xl font-light text-gray-500 mb-12">
+                As a results-driven product manager with over 4.7 years of experience in B2C e-commerce, fintech, and AI, I thrive at the intersection of user needs and business goals. My passion lies in building intuitive, high-impact products from concept to launch.
+            </p>
+            
+            <!-- Metrics Section -->
+            <div class="grid md:grid-cols-4 gap-8 my-16">
+                <div class="metric-card">
+                    <div class="text-5xl font-bold text-gradient">16%</div>
+                    <p class="mt-2 text-sm text-gray-500">Reduction in support tickets</p>
+                </div>
+                <div class="metric-card">
+                    <div class="text-5xl font-bold text-gradient">10%</div>
+                    <p class="mt-2 text-sm text-gray-500">Increase in search CTR</p>
+                </div>
+                <div class="metric-card">
+                    <div class="text-5xl font-bold text-gradient">9%</div>
+                    <p class="mt-2 text-sm text-gray-500">Overall decrease in operational costs</p>
+                </div>
+                <div class="metric-card">
+                    <div class="text-5xl font-bold text-gradient">10%</div>
+                    <p class="mt-2 text-sm text-gray-500">Increase in consumer electronics orders</p>
+                </div>
+            </div>
+
+            <!-- Philosophy Section -->
+            <div class="mt-24">
+                <h3 class="text-4xl font-semibold mb-4">My Product Philosophy</h3>
+                <p class="text-lg font-light text-gray-500 leading-relaxed">
+                    Product management, to me, is about listening to the silent language of user behavior and translating it into a product that solves real-world challenges. It's the art of balancing user empathy with strategic business thinking. I love building things that make a difference, from helping users find what they need instantly to creating robust platforms that power cross-app experiences. It's this combination of user delight and business impact that fuels my passion.
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Case Studies Section -->
+    <section id="case-studies" class="section bg-white">
+        <div class="container">
+            <h2 class="text-5xl font-bold text-center mb-20">Case Studies</h2>
+
+            <!-- Case Study 1 -->
+            <div class="case-study">
+                <h3 class="text-3xl font-bold mb-6">Case Study 1: Turning a Curious Rookie into a Daily Fantasy Sports Player</h3>
+                <div class="grid md:grid-cols-2 gap-12">
+                    <div>
+                        <div class="mb-8">
+                            <h4 class="text-xl font-semibold mb-2">Problem Statement</h4>
+                            <p class="text-gray-500">
+                                The Indian fantasy sports market has a significant retention cliff, with 95% of new players quitting before Day 30. The challenge was to build an app that addresses core user anxieties—fear of losing money, choice paralysis, and lack of knowledge—to turn curious rookies into daily, engaged players.
+                            </p>
+                        </div>
+                        <div class="mb-8">
+                            <h4 class="text-xl font-semibold mb-2">Approach & Solution</h4>
+                            <p class="text-gray-500">
+                                The approach was to focus on a user-centric design that built trust and reduced friction. We introduced a **Smart-Start** feature for risk-free onboarding and a **Built-in Coach** (AI Quick-Scout) to provide data-driven suggestions, making the game more accessible. A **Progression Engine** with daily missions was implemented to foster long-term habit formation.
+                            </p>
+                        </div>
+                        <div class="mb-8">
+                            <h4 class="text-xl font-semibold mb-2">Key Pain Points Identified</h4>
+                            <ul class="list-disc list-inside text-gray-500">
+                                <li>**Choice Overload:** "I don't know who to pick."</li>
+                                <li>**Fear of Loss:** "What if I lose my money?"</li>
+                                <li>**Lack of Knowledge:** "I can't compete with the pros."</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="mb-8">
+                            <h4 class="text-xl font-semibold mb-2">Prioritization & Metrics</h4>
+                            <p class="text-gray-500">
+                                Features were prioritized to address the most critical retention issues first. The "Smart-Start" and "Frictionless Money" features were prioritized for the MVP to improve Day-1 and Day-7 retention. The success was measured by key metrics, with a target of **45% Day-1 active users** (vs. 32% benchmark) and **12% Day-30 active users** (vs. 7% benchmark).
+                            </p>
+                        </div>
+                        <div class="mb-8">
+                            <h4 class="text-xl font-semibold mb-2">Impact</h4>
+                            <p class="text-gray-500">
+                                By solving user anxiety instead of just competing on prize money, the app created a loyal user base. The focus on guidance, progress, and trust led to a significant improvement in retention rates, making the app a compelling alternative in a crowded market.
+                            </p>
+                        </div>
+                        <div class="mb-8">
+                            <h4 class="text-xl font-semibold mb-2">Personal Touch</h4>
+                            <p class="text-gray-500">
+                                This project felt deeply important because it wasn't just about building another fantasy app; it was about solving a fundamental human problem—anxiety. We were creating a safe, easy, and fun space for users to learn and grow. That shift from a product-first to a user-anxiety-first mindset was incredibly rewarding.
+                            </p>
+                        </div>
+                        <a href="https://docs.google.com/presentation/d/1neDuNyTigXJ9UhwxSCSe_uWEqKvBhPPIEeDJu02iTOw/edit?usp=sharing" target="_blank" class="inline-block mt-4 px-8 py-3 bg-gray-900 text-white rounded-full font-semibold hover:bg-blue-600 transition-colors duration-200">
+                            View Presentation Deck
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Case Study 2 -->
+            <div class="case-study">
+                <h3 class="text-3xl font-bold mb-6">Case Study 2: Personalized Training Plans in Strava</h3>
+                <div class="grid md:grid-cols-2 gap-12">
+                    <div>
+                        <div class="mb-8">
+                            <h4 class="text-xl font-semibold mb-2">Problem Statement</h4>
+                            <p class="text-gray-500">
+                                Strava is a dominant social network for athletes, but it lacked a structured, data-driven training feature. The objective was to introduce a personalized training plan that leveraged user activity data across multiple sports to provide tailored programs for events like a full marathon or half marathon, and to differentiate Strava in the market.
+                            </p>
+                        </div>
+                        <div class="mb-8">
+                            <h4 class="text-xl font-semibold mb-2">Approach & Solution</h4>
+                            <p class="text-gray-500">
+                                The approach was to integrate a structured training module into Strava's existing platform. The solution involved an **Adaptive Training Plan** that dynamically adjusts based on a user's past activities and progress, including cross-training activities like cycling and strength training, promoting a holistic approach to fitness and injury prevention.
+                            </p>
+                        </div>
+                        <div class="mb-8">
+                            <h4 class="text-xl font-semibold mb-2">Key Pain Points Identified</h4>
+                            <ul class="list-disc list-inside text-gray-500">
+                                <li>**Generic Plans:** "A one-size-fits-all plan doesn't work for me."</li>
+                                <li>**Lack of Guidance:** "I don't know where to start or how to train properly."</li>
+                                <li>**Risk of Injury:** "I'm worried about getting injured with an unguided training plan."</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="mb-8">
+                            <h4 class="text-xl font-semibold mb-2">Prioritization & Metrics</h4>
+                            <p class="text-gray-500">
+                                The MVP focused on core functionality: goal selection, a basic adaptive plan, and a clean user journey. The success of the feature was measured by **user adoption rate**, **program completion rates**, and **improvement in user running performance** (e.g., race completion rates and pace).
+                            </p>
+                        </div>
+                        <div class="mb-8">
+                            <h4 class="text-xl font-semibold mb-2">Impact</h4>
+                            <p class="text-gray-500">
+                                This feature differentiates Strava by offering a holistic, adaptive, and personalized training experience. It leverages the platform's unique data insights to help users achieve their fitness goals while engaging with the community, ultimately driving higher user retention and engagement.
+                            </p>
+                        </div>
+                        <div class="mb-8">
+                            <h4 class="text-xl font-semibold mb-2">Personal Touch</h4>
+                            <p class="text-gray-500">
+                                Having run a marathon myself, I know the dedication and planning required. This project resonated with me on a personal level. I felt like I was building a tool I would have genuinely needed and appreciated during my own training, and the opportunity to merge my personal passion for running with my professional expertise was incredibly fulfilling.
+                            </p>
+                        </div>
+                        <a href="https://drive.google.com/file/d/184GKqJY6_g6e3eh4IimwedJtvhp6vWv6/view?usp=sharing" target="_blank" class="inline-block mt-4 px-8 py-3 bg-gray-900 text-white rounded-full font-semibold hover:bg-blue-600 transition-colors duration-200">
+                            View PRD
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="section bg-gray-50">
+        <div class="container max-w-2xl text-center">
+            <div class="contact-card">
+                <h2 class="text-5xl font-bold mb-4">Get in Touch</h2>
+                <p class="text-lg text-gray-500 mb-8">
+                    Let's connect and discuss how I can help your team build the next great product.
+                </p>
+                <div class="space-y-4 mb-8">
+                    <p class="text-lg font-medium">Abhishek Singh</p>
+                    <p class="text-lg font-medium"><a href="mailto:abhisheksingh9g@gmail.com" class="text-blue-600 hover:underline">abhisheksingh9g@gmail.com</a></p>
+                    <p class="text-lg font-medium"><a href="tel:+918425877338" class="text-blue-600 hover:underline">+91 8425877338</a></p>
+                    <p class="text-lg text-gray-500">Navi Mumbai, MH</p>
+                </div>
+                <div class="flex justify-center space-x-6 mb-8">
+                    <!-- LinkedIn -->
+                    <a href="https://www.linkedin.com/in/abhishek-singh2501" target="_blank" rel="noopener noreferrer" class="social-link">
+                        <svg class="w-8 h-8 text-gray-400 hover:text-blue-700" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.763s.784-1.763 1.75-1.763 1.75.79 1.75 1.763-.783 1.763-1.75 1.763zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                        </svg>
+                    </a>
+                    <!-- GitHub -->
+                    <a href="https://github.com/abyssingh" target="_blank" rel="noopener noreferrer" class="social-link">
+                        <svg class="w-8 h-8 text-gray-400 hover:text-gray-700" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.73.083-.73 1.205.084 1.839 1.237 1.839 1.237 1.07 1.836 2.809 1.305 3.493.998.108-.776.417-1.305.761-1.605-2.665-.304-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.046.138 3.003.404 2.292-1.552 3.3-1.23 3.3-1.23.653 1.653.242 2.874.118 3.176.766.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" clip-rule="evenodd"/>
+                        </svg>
+                    </a>
+                </div>
+                <a href="https://drive.google.com/file/d/16J6D9kt9uIPGhprnQNT32yV4ZsGFM6wz/view?usp=sharing" target="_blank" class="inline-block mt-4 px-8 py-3 bg-gray-900 text-white rounded-full font-semibold hover:bg-blue-600 transition-colors duration-200">
+                    Download My Resume
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 bg-gray-100 text-center text-gray-400 text-sm">
+        <p>&copy; 2024 Abhishek Singh. All rights reserved.</p>
+    </footer>
+
+    <!-- Floating Chat Assistant -->
+    <div id="chat-container">
+        <!-- Floating Button -->
+        <button id="chat-button" class="relative z-10 w-16 h-16 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+        </button>
+
+        <!-- Chat Window -->
+        <div id="chat-window" class="absolute bottom-20 right-0 hidden">
+            <div id="chat-header">
+                <h4 class="text-xl font-semibold">Abhishek's AI Assistant</h4>
+                <button id="chat-close-btn">&times;</button>
+            </div>
+            <div id="chat-messages" class="flex-grow overflow-y-auto p-4">
+                <!-- Chat messages will be appended here -->
+                <div class="chat-bubble assistant">Hello! I'm here to help you learn more about Abhishek's experience. What would you like to know?</div>
+            </div>
+            <form id="chat-input-form" class="p-4 border-t border-gray-200">
+                <input type="text" id="chat-input" placeholder="Ask me a question..." class="w-full rounded-full border px-4 py-2" autocomplete="off">
+                <button type="submit" id="chat-submit-btn" class="px-6 py-2 rounded-full font-semibold">Send</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- JavaScript for the Chat Assistant -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const chatButton = document.getElementById('chat-button');
+            const chatWindow = document.getElementById('chat-window');
+            const chatCloseBtn = document.getElementById('chat-close-btn');
+            const chatMessages = document.getElementById('chat-messages');
+            const chatForm = document.getElementById('chat-input-form');
+            const chatInput = document.getElementById('chat-input');
+            let isChatOpen = false;
+
+            // Raw content from resume and case studies to act as the AI's knowledge base
+            const knowledgeBase = `
+                Resume Summary:
+                Results-driven product manager with 4.7+ years in B2C e-commerce, fintech, and Al products. Expert in full-cycle product development, CRO, personalization, API integration, app performance optimization, and Al technology integration (LLM frameworks) to drive user retention and business growth across market segments.
+
+                Experience:
+                - Jio Platforms Ltd., Product Manager B2C & Al Apps (Nov. 2020 - Present)
+                - Driving AI Smart Assistant development, defining MVP, USPs, and success metrics.
+                - Partnering with AI/ML teams to embed multimodal LLMs.
+                - Led Wealth Management App development for Jio & BlackRock, creating seamless onboarding experiences with AI-powered voice interactions.
+                - Led the development and integration of the Retail Account (SSO-based login), connecting apps like JioMart, Ajio, Tira, Netmeds, and Digital. Enabled faster onboarding, cross-app personalization, and unified profiles.
+                - Enhanced UI/UX of 'Need Help' section with contextual FAQs, leading to a 16% reduction in support tickets and 9% overall cost decrease.
+                - Led a cross-functional initiative to integrate JioMart into MyJios Universal Search, increasing consumer electronics orders by 10%.
+
+                Skills:
+                - Product Management: Ecommerce, Quick Commerce, Agile/Scrum, Product Roadmapping, User Story Creation, A/B Testing, Prioritization (RICE, MOSCOW), Product Metrics & KPIs, MVP, GTM, Growth strategy.
+                - Soft Skills: Cross-functional Leadership, Stakeholder Management, Problem Solving, Strategic Thinking, User Empathy.
+                - Tools: Figma, Excel, Google Analytics, Looker Studio, Miro, CleverTap, Branch.io, Appsflyer, Balsamiq, Powerpoint, Word, Tableau, OneNote, Azure DevOps, Postman-API.
+
+                Case Study 1 (Fantasy Sports App):
+                - Problem: 95% of new players quit before Day 30 due to fear of losing money, choice overload, and lack of knowledge.
+                - Solution: Built a user-centric app with a Smart-Start feature (risk-free entry), Built-in AI Coach (AI Quick-Scout), and a Progression Engine.
+                - Metrics: Targeted 45% Day-1 active users (vs. 32% benchmark) and 12% Day-30 active users (vs. 7% benchmark).
+                - Impact: Solved user anxiety, leading to improved retention rates.
+
+                Case Study 2 (Strava Training Plan):
+                - Problem: Strava lacked structured, personalized training features.
+                - Solution: Introduced an Adaptive Training Plan leveraging cross-training data (cycling, strength training).
+                - Metrics: Measured user adoption, program completion rates, and improvement in running performance.
+                - Impact: Differentiated Strava by offering a holistic, adaptive experience, driving higher user retention and engagement. My personal passion for running inspired this project.
+            `;
+
+            // Function to toggle chat window visibility
+            chatButton.addEventListener('click', () => {
+                isChatOpen = !isChatOpen;
+                chatWindow.classList.toggle('open', isChatOpen);
+                if (isChatOpen) {
+                    chatWindow.style.display = 'flex';
+                } else {
+                    setTimeout(() => chatWindow.style.display = 'none', 300);
+                }
+            });
+
+            chatCloseBtn.addEventListener('click', () => {
+                isChatOpen = false;
+                chatWindow.classList.remove('open');
+                setTimeout(() => chatWindow.style.display = 'none', 300);
+            });
+
+            // Function to append a message to the chat
+            const appendMessage = (text, sender) => {
+                const messageEl = document.createElement('div');
+                messageEl.textContent = text;
+                messageEl.classList.add('chat-bubble', sender);
+                chatMessages.appendChild(messageEl);
+                chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll to bottom
+            };
+
+            // Function to show a loader
+            const showLoader = () => {
+                const loaderEl = document.createElement('div');
+                loaderEl.id = 'loader-assistant';
+                loaderEl.classList.add('chat-bubble', 'assistant', 'loader-dots');
+                loaderEl.innerHTML = `<span></span><span></span><span></span>`;
+                chatMessages.appendChild(loaderEl);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            };
+
+            // Function to hide the loader
+            const hideLoader = () => {
+                const loaderEl = document.getElementById('loader-assistant');
+                if (loaderEl) {
+                    loaderEl.remove();
+                }
+            };
+            
+            // Handle form submission
+            chatForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const userMessage = chatInput.value.trim();
+                if (!userMessage) return;
+
+                appendMessage(userMessage, 'user');
+                chatInput.value = '';
+                showLoader();
+
+                const systemPrompt = `You are an AI assistant representing Abhishek Singh, a product manager. Your purpose is to answer questions about his professional experience, skills, and projects. Use ONLY the information provided in the context below. Do not invent information or stray from the provided context. If a question cannot be answered from the provided information, state that you do not have that information.
+
+                Context about Abhishek Singh:
+                ${knowledgeBase}
+
+                ---\nUser's Question: ${userMessage}
+                Assistant's Answer:`;
+                
+                // API call to Gemini
+                const payload = {
+                    contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
+                };
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const aiResponse = result.candidates[0].content.parts[0].text;
+                        appendMessage(aiResponse, 'assistant');
+                    } else {
+                        appendMessage("Sorry, I couldn't process that request. Please try again.", 'assistant');
+                    }
+                } catch (error) {
+                    console.error('Error fetching from Gemini API:', error);
+                    appendMessage("An error occurred. Please try again later.", 'assistant');
+                } finally {
+                    hideLoader();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
