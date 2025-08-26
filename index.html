@@ -278,12 +278,17 @@
 
     <!-- Sticky Navigation Bar -->
     <nav class="header-sticky border-b border-gray-200">
-        <div class="container flex flex-col md:flex-row justify-between items-center py-4">
-            <h1 class="text-2xl font-bold mb-4 md:mb-0"><span class="text-gradient">Abhishek Singh</span></h1>
-            <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-8 text-lg font-medium">
-                <a href="#homepage" class="nav-link">Home</a>
-                <a href="#case-studies" class="nav-link">Case Studies</a>
-                <a href="#contact" class="nav-link">Contact</a>
+        <div class="container flex justify-between items-center py-4 relative">
+            <h1 class="text-2xl font-bold"><span class="text-gradient">Abhishek Singh</span></h1>
+            <button id="menu-button" class="md:hidden focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+            <div id="nav-links" class="hidden absolute top-full left-0 w-full bg-white shadow-md flex-col md:shadow-none md:bg-transparent md:static md:flex md:flex-row md:w-auto space-y-2 md:space-y-0 md:space-x-8 text-lg font-medium">
+                <a href="#homepage" class="nav-link px-4 py-2 md:px-0 md:py-0">Home</a>
+                <a href="#case-studies" class="nav-link px-4 py-2 md:px-0 md:py-0">Case Studies</a>
+                <a href="#contact" class="nav-link px-4 py-2 md:px-0 md:py-0">Contact</a>
             </div>
         </div>
     </nav>
@@ -512,6 +517,14 @@
     <!-- JavaScript for the Chat Assistant -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const menuButton = document.getElementById('menu-button');
+            const navLinks = document.getElementById('nav-links');
+            if (menuButton && navLinks) {
+                menuButton.addEventListener('click', () => {
+                    navLinks.classList.toggle('hidden');
+                });
+            }
+
             const chatButton = document.getElementById('chat-button');
             const chatWindow = document.getElementById('chat-window');
             const chatCloseBtn = document.getElementById('chat-close-btn');
