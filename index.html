@@ -272,6 +272,121 @@
                 max-height: none;
             }
         }
+        /* Timeline Section Styles */
+        #timeline .timeline-track {
+            display: flex;
+            gap: 2rem;
+            overflow-x: auto;
+            padding-bottom: 1rem;
+            scroll-behavior: smooth;
+        }
+        #timeline .timeline-item {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            padding: 1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            min-width: 16rem;
+            flex-shrink: 0;
+            position: relative;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+        #timeline .timeline-item.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        #timeline .timeline-item.award {
+            box-shadow: 0 0 0 2px #007aff;
+        }
+        #timeline .timeline-item.award.visible {
+            animation: timeline-pulse 0.8s ease;
+        }
+        #timeline .timeline-item.setback {
+            background-color: #f3f4f6;
+        }
+        #timeline .timeline-item.setback:hover {
+            transform: translateY(-2px) rotate(1deg);
+        }
+        #timeline .chip {
+            display: inline-block;
+            padding: 0.125rem 0.5rem;
+            margin: 0 0.25rem 0.25rem 0;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            background-color: #e5e7eb;
+            color: #1f2937;
+        }
+        #timeline .show-more {
+            color: #007aff;
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+        @media (min-width:768px) {
+            #timeline .timeline-track {
+                align-items: flex-start;
+            }
+            #timeline .timeline-item:not(:last-child)::after {
+                content: "";
+                position: absolute;
+                top: 1.5rem;
+                right: -2rem;
+                width: 2rem;
+                border-top: 2px dotted #d1d5db;
+            }
+            #timeline .timeline-item::before {
+                content: "";
+                position: absolute;
+                top: 1rem;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 0.75rem;
+                height: 0.75rem;
+                background-color: #007aff;
+                border-radius: 9999px;
+            }
+        }
+        @media (max-width:767px) {
+            #timeline .timeline-track {
+                flex-direction: column;
+                position: relative;
+            }
+            #timeline .timeline-track::before {
+                content: "";
+                position: absolute;
+                left: 1rem;
+                top: 0;
+                bottom: 0;
+                border-left: 2px dotted #d1d5db;
+            }
+            #timeline .timeline-item {
+                min-width: auto;
+                margin-left: 2rem;
+            }
+            #timeline .timeline-item::before {
+                content: "";
+                position: absolute;
+                left: -1.5rem;
+                top: 1rem;
+                width: 0.75rem;
+                height: 0.75rem;
+                background-color: #007aff;
+                border-radius: 9999px;
+            }
+        }
+        @keyframes timeline-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0,122,255,0.5); }
+            70% { box-shadow: 0 0 0 10px rgba(0,122,255,0); }
+            100% { box-shadow: 0 0 0 0 rgba(0,122,255,0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #timeline .timeline-item {
+                transition: none;
+            }
+            #timeline .timeline-item.award.visible {
+                animation: none;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900">
@@ -289,6 +404,7 @@
                 <a href="#homepage" class="nav-link px-4 py-2 md:px-0 md:py-0">Home</a>
                 <a href="#case-studies" class="nav-link px-4 py-2 md:px-0 md:py-0">Case Studies</a>
                 <a href="#contact" class="nav-link px-4 py-2 md:px-0 md:py-0">Contact</a>
+                <a href="#timeline" class="nav-link px-4 py-2 md:px-0 md:py-0">Timeline</a>
             </div>
         </div>
     </nav>
@@ -332,6 +448,97 @@
             </div>
         </div>
     </main>
+
+    <!-- Timeline Section -->
+    <section id="timeline" class="section">
+        <div class="container">
+            <h2 class="text-4xl font-bold text-center mb-8">Timeline</h2>
+            <div class="timeline-track relative">
+                <div class="timeline-item">
+                    <span class="text-sm font-semibold text-gray-600">Oct 1997</span>
+                    <h3 class="text-lg font-semibold">Born | Nerul, Navi Mumbai 🐣🌴</h3>
+                    <p>Beginnings in a city I still call home—curious, observant, and always asking "why?"</p>
+                </div>
+                <div class="timeline-item award">
+                    <span class="text-sm font-semibold text-gray-600">2004–2014</span>
+                    <h3 class="text-lg font-semibold">School Years | Nerul 🎒</h3>
+                    <p>Average till Grade 8, then switched on: loved science, thrived in oratory (speeches, debates, elocution) with multiple intra/inter-school wins 🎤.</p>
+                    <p>Tried district-level chess ♟️—fell short, learned resilience.</p>
+                    <div class="more hidden">
+                        <p>Fell in love with astrophysics & particle physics ✨; became a regular at quiz competitions 🧠.</p>
+                        <p>Recognition: “Master of Augustine (Student of the Year)” 🏆</p>
+                    </div>
+                    <button class="show-more" aria-expanded="false">Show more</button>
+                    <div class="mt-2">
+                        <span class="chip">Science</span>
+                        <span class="chip">Oratory</span>
+                        <span class="chip">Chess</span>
+                        <span class="chip">Quizzes</span>
+                        <span class="chip">Resilience</span>
+                        <span class="chip">Recognition</span>
+                    </div>
+                </div>
+                <div class="timeline-item award">
+                    <span class="text-sm font-semibold text-gray-600">2014–2016</span>
+                    <h3 class="text-lg font-semibold">Jr. College (PCM + CS) 📚💻</h3>
+                    <p>Two intense years balancing entrance + boards; kept the mic warm with presentations & elocution.</p>
+                    <p>Built science projects—won some, lost many (great lessons).</p>
+                    <div class="more hidden">
+                        <p>Recognition: “Mr. MGM (Student of the Year)” 🏆</p>
+                    </div>
+                    <button class="show-more" aria-expanded="false">Show more</button>
+                    <div class="mt-2">
+                        <span class="chip">Science</span>
+                        <span class="chip">Oratory</span>
+                        <span class="chip">Recognition</span>
+                    </div>
+                </div>
+                <div class="timeline-item setback">
+                    <span class="text-sm font-semibold text-gray-600">2016–2020</span>
+                    <h3 class="text-lg font-semibold">Engineering (Electronics & Telecom) 🤖🔧</h3>
+                    <p>JEE didn’t go to plan—lack of guidance/coaching led me here, and I made it count.</p>
+                    <p>Early student council/marketing/sponsorships → later IEEE Tech Head, guiding IoT projects.</p>
+                    <div class="more hidden">
+                        <p>Final-year: Drone + Machine Learning project 🚁🤝🧠; eventually IEEE Chairperson.</p>
+                        <p>Kept winning quizzes; then COVID hit—project disrupted, adaptability sharpened.</p>
+                    </div>
+                    <button class="show-more" aria-expanded="false">Show more</button>
+                    <div class="mt-2">
+                        <span class="chip">Leadership</span>
+                        <span class="chip">IoT</span>
+                        <span class="chip">ML/AI</span>
+                        <span class="chip">Quizzes</span>
+                        <span class="chip">Resilience</span>
+                    </div>
+                </div>
+                <div class="timeline-item award">
+                    <span class="text-sm font-semibold text-gray-600">2020–Present</span>
+                    <h3 class="text-lg font-semibold">Product Journey @ Jio (summary only) 🚀</h3>
+                    <p>Joined as APM, grew into Product Manager (B2C & AI).</p>
+                    <p>Worked across AI assistant, commerce, and productivity tracks.</p>
+                    <div class="more hidden">
+                        <p>For details, see my Experience section (don’t duplicate here).</p>
+                    </div>
+                    <button class="show-more" aria-expanded="false">Show more</button>
+                    <div class="mt-2">
+                        <a href="#case-studies" class="chip">🏆 Awards</a>
+                        <a href="#case-studies" class="chip">📈 Impact</a>
+                        <span class="chip">ML/AI</span>
+                        <span class="chip">Leadership</span>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <span class="text-sm font-semibold text-gray-600">Now</span>
+                    <h3 class="text-lg font-semibold">What’s Next 🌟</h3>
+                    <p>Building at the intersection of AI, product growth, and user delight.</p>
+                    <p>Forever student—curiosity on, humility intact.</p>
+                    <div class="mt-2">
+                        <span class="chip">ML/AI</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <!-- Case Studies Section -->
     <section id="case-studies" class="section bg-white">
@@ -513,7 +720,52 @@
             </form>
         </div>
     </div>
-    
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const timeline = document.getElementById('timeline');
+            if (timeline) {
+                const items = timeline.querySelectorAll('.timeline-item');
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('visible');
+                        }
+                    });
+                }, { threshold: 0.2 });
+                items.forEach(item => observer.observe(item));
+
+                timeline.querySelectorAll('.show-more').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const more = btn.previousElementSibling;
+                        const expanded = more.classList.toggle('hidden');
+                        btn.textContent = expanded ? 'Show less' : 'Show more';
+                        btn.setAttribute('aria-expanded', expanded);
+                    });
+                });
+
+                const track = timeline.querySelector('.timeline-track');
+                let isDown = false;
+                let startX;
+                let scrollLeft;
+                track.addEventListener('mousedown', e => {
+                    isDown = true;
+                    startX = e.pageX - track.offsetLeft;
+                    scrollLeft = track.scrollLeft;
+                });
+                track.addEventListener('mouseleave', () => { isDown = false; });
+                track.addEventListener('mouseup', () => { isDown = false; });
+                track.addEventListener('mousemove', e => {
+                    if (!isDown) return;
+                    e.preventDefault();
+                    const x = e.pageX - track.offsetLeft;
+                    const walk = (x - startX);
+                    track.scrollLeft = scrollLeft - walk;
+                });
+            }
+        });
+    </script>
+
     <!-- JavaScript for the Chat Assistant -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
