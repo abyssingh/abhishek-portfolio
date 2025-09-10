@@ -272,6 +272,87 @@
                 max-height: none;
             }
         }
+        /* Timeline Section Styles */
+        #timeline .timeline-track {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            margin-left: 1rem;
+        }
+        #timeline .timeline-track::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            border-left: 2px dotted #d1d5db;
+        }
+        #timeline .timeline-item {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            padding: 1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            position: relative;
+            margin-left: 2rem;
+            max-width: 40rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+        #timeline .timeline-item::before {
+            content: "";
+            position: absolute;
+            left: -2rem;
+            top: 1rem;
+            width: 0.75rem;
+            height: 0.75rem;
+            background-color: #007aff;
+            border-radius: 9999px;
+        }
+        #timeline .timeline-item.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        #timeline .timeline-item.award {
+            box-shadow: 0 0 0 2px #007aff;
+        }
+        #timeline .timeline-item.award.visible {
+            animation: timeline-pulse 0.8s ease;
+        }
+        #timeline .timeline-item.setback {
+            background-color: #f3f4f6;
+        }
+        #timeline .timeline-item.setback:hover {
+            transform: translateY(-2px) rotate(1deg);
+        }
+        #timeline .chip {
+            display: inline-block;
+            padding: 0.125rem 0.5rem;
+            margin: 0 0.25rem 0.25rem 0;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            background-color: #e5e7eb;
+            color: #1f2937;
+        }
+        #timeline .show-more {
+            color: #007aff;
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+        @keyframes timeline-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0,122,255,0.5); }
+            70% { box-shadow: 0 0 0 10px rgba(0,122,255,0); }
+            100% { box-shadow: 0 0 0 0 rgba(0,122,255,0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #timeline .timeline-item {
+                transition: none;
+            }
+            #timeline .timeline-item.award.visible {
+                animation: none;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900">
@@ -289,6 +370,7 @@
                 <a href="#homepage" class="nav-link px-4 py-2 md:px-0 md:py-0">Home</a>
                 <a href="#case-studies" class="nav-link px-4 py-2 md:px-0 md:py-0">Case Studies</a>
                 <a href="#contact" class="nav-link px-4 py-2 md:px-0 md:py-0">Contact</a>
+                <a href="#timeline" class="nav-link px-4 py-2 md:px-0 md:py-0">My Path</a>
             </div>
         </div>
     </nav>
@@ -332,6 +414,111 @@
             </div>
         </div>
     </main>
+
+    <!-- Timeline Section -->
+    <section id="timeline" class="section">
+        <div class="container">
+            <h2 class="text-4xl font-bold text-center mb-8">My Life &amp; Career Path</h2>
+            <div class="timeline-track">
+                <div class="timeline-item">
+                    <span class="text-sm font-semibold text-gray-600">Oct 1997</span>
+                    <h3 class="text-lg font-semibold">Born | Nerul, Navi Mumbai 🐣🌴</h3>
+                    <ul class="list-disc pl-5">
+                        <li>Curious Nerul native, always asking "why?"</li>
+                    </ul>
+                </div>
+                <div class="timeline-item award">
+                    <span class="text-sm font-semibold text-gray-600">2004–2014</span>
+                    <h3 class="text-lg font-semibold">School Years | Nerul 🎒</h3>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li>Loved science; oratory wins 🎤</li>
+                        <li>District chess trial taught resilience ♟️</li>
+                    </ul>
+                    <div class="more hidden">
+                        <ul class="list-disc pl-5 space-y-1">
+                            <li>Astrophysics &amp; particle physics fan ✨; quiz regular 🧠</li>
+                            <li>Recognition: “Master of Augustine” 🏆</li>
+                        </ul>
+                    </div>
+                    <button class="show-more" aria-expanded="false">Show more</button>
+                    <div class="mt-2">
+                        <span class="chip">Science</span>
+                        <span class="chip">Oratory</span>
+                        <span class="chip">Chess</span>
+                        <span class="chip">Quizzes</span>
+                        <span class="chip">Resilience</span>
+                        <span class="chip">Recognition</span>
+                    </div>
+                </div>
+                <div class="timeline-item award">
+                    <span class="text-sm font-semibold text-gray-600">2014–2016</span>
+                    <h3 class="text-lg font-semibold">Jr. College (PCM + CS) 📚💻</h3>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li>Balanced entrance prep with boards; kept presenting</li>
+                        <li>Built science projects—wins and lessons</li>
+                    </ul>
+                    <div class="more hidden">
+                        <ul class="list-disc pl-5 space-y-1">
+                            <li>Recognition: “Mr. MGM” 🏆</li>
+                        </ul>
+                    </div>
+                    <button class="show-more" aria-expanded="false">Show more</button>
+                    <div class="mt-2">
+                        <span class="chip">Science</span>
+                        <span class="chip">Oratory</span>
+                        <span class="chip">Recognition</span>
+                    </div>
+                </div>
+                <div class="timeline-item setback">
+                    <span class="text-sm font-semibold text-gray-600">2016–2020</span>
+                    <h3 class="text-lg font-semibold">Engineering (Electronics &amp; Telecom) 🤖🔧</h3>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li>JEE detour; made it count</li>
+                        <li>Student council to IEEE Tech Head, leading IoT work</li>
+                    </ul>
+                    <div class="more hidden">
+                        <ul class="list-disc pl-5 space-y-1">
+                            <li>Drone + ML final project; later IEEE Chairperson</li>
+                            <li>Quizzes and COVID disruptions honed adaptability</li>
+                        </ul>
+                    </div>
+                    <button class="show-more" aria-expanded="false">Show more</button>
+                    <div class="mt-2">
+                        <span class="chip">Leadership</span>
+                        <span class="chip">IoT</span>
+                        <span class="chip">ML/AI</span>
+                        <span class="chip">Quizzes</span>
+                        <span class="chip">Resilience</span>
+                    </div>
+                </div>
+                <div class="timeline-item award">
+                    <span class="text-sm font-semibold text-gray-600">2020–Present</span>
+                    <h3 class="text-lg font-semibold">Product Journey @ Jio (summary only) 🚀</h3>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li>APM to Product Manager across AI, commerce &amp; productivity</li>
+                        <li>See Experience section for more</li>
+                    </ul>
+                    <div class="mt-2">
+                        <a href="#case-studies" class="chip">🏆 Awards</a>
+                        <a href="#case-studies" class="chip">📈 Impact</a>
+                        <span class="chip">ML/AI</span>
+                        <span class="chip">Leadership</span>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <span class="text-sm font-semibold text-gray-600">Now</span>
+                    <h3 class="text-lg font-semibold">What’s Next 🌟</h3>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li>Building at the intersection of AI, product growth &amp; delight</li>
+                        <li>Forever student—curiosity on, humility intact</li>
+                    </ul>
+                    <div class="mt-2">
+                        <span class="chip">ML/AI</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <!-- Case Studies Section -->
     <section id="case-studies" class="section bg-white">
@@ -513,7 +700,34 @@
             </form>
         </div>
     </div>
-    
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const timeline = document.getElementById('timeline');
+            if (timeline) {
+                const items = timeline.querySelectorAll('.timeline-item');
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('visible');
+                        }
+                    });
+                }, { threshold: 0.2 });
+                items.forEach(item => observer.observe(item));
+
+                timeline.querySelectorAll('.show-more').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const more = btn.previousElementSibling;
+                        const expanded = more.classList.toggle('hidden');
+                        btn.textContent = expanded ? 'Show less' : 'Show more';
+                        btn.setAttribute('aria-expanded', expanded);
+                    });
+                });
+
+            }
+        });
+    </script>
+
     <!-- JavaScript for the Chat Assistant -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
