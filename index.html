@@ -273,84 +273,298 @@
             }
         }
         /* Timeline Section Styles */
-        #timeline .timeline-track {
+        #timeline {
+            position: relative;
+        }
+        #timeline .timeline-container {
+            display: flex;
+            flex-direction: column;
+            gap: 3rem;
+        }
+        #timeline .timeline-header {
+            text-align: center;
+            max-width: 46rem;
+            margin: 0 auto;
+        }
+        #timeline .timeline-kicker {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            background: rgba(0, 122, 255, 0.08);
+            color: #007aff;
+        }
+        #timeline .timeline-title {
+            font-size: clamp(2.25rem, 4vw, 3rem);
+            font-weight: 700;
+            margin-top: 1rem;
+        }
+        #timeline .timeline-subtitle {
+            margin-top: 1rem;
+            font-size: 1rem;
+            line-height: 1.7;
+            color: #4b5563;
+        }
+        #timeline .timeline-wrapper {
+            position: relative;
+        }
+        #timeline .timeline-scroll {
             position: relative;
             display: flex;
             flex-direction: column;
-            gap: 2rem;
-            margin-left: 1rem;
+            gap: 2.5rem;
+            padding-left: 2.75rem;
         }
-        #timeline .timeline-track::before {
+        #timeline .timeline-scroll::before {
             content: "";
             position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
+            inset: 0 auto 0 1.1rem;
             border-left: 2px dotted #d1d5db;
         }
-        #timeline .timeline-item {
-            background-color: #ffffff;
-            border-radius: 1rem;
-            padding: 1rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        #timeline .timeline-node {
             position: relative;
-            margin-left: 2rem;
-            max-width: 40rem;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.4s ease, transform 0.4s ease;
         }
-        #timeline .timeline-item::before {
+        #timeline .timeline-node::before {
             content: "";
             position: absolute;
-            left: -2rem;
-            top: 1rem;
+            left: 1.1rem;
+            top: 1.7rem;
             width: 0.75rem;
             height: 0.75rem;
-            background-color: #007aff;
             border-radius: 9999px;
+            background: #2563eb;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+            transform: translate(-50%, -50%);
+            transition: box-shadow 0.3s ease;
         }
-        #timeline .timeline-item.visible {
+        #timeline .timeline-node.award::before {
+            background: #2563eb;
+            box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.18);
+        }
+        #timeline .timeline-node.setback::before {
+            background: #9ca3af;
+            box-shadow: 0 0 0 4px rgba(156, 163, 175, 0.18);
+        }
+        #timeline .timeline-card {
+            position: relative;
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: 0 30px 70px rgba(15, 23, 42, 0.08);
+            border: 1px solid rgba(226, 232, 240, 0.7);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            transition: transform 0.4s ease, box-shadow 0.4s ease, opacity 0.4s ease;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        #timeline .timeline-node.visible .timeline-card {
             opacity: 1;
             transform: translateY(0);
         }
-        #timeline .timeline-item.award {
-            box-shadow: 0 0 0 2px #007aff;
+        #timeline .timeline-node.award .timeline-card {
+            border: 1px solid rgba(37, 99, 235, 0.2);
+            box-shadow: 0 24px 65px rgba(37, 99, 235, 0.15);
         }
-        #timeline .timeline-item.award.visible {
-            animation: timeline-pulse 0.8s ease;
+        #timeline .timeline-node.award.visible .timeline-card {
+            animation: timeline-pulse 1s ease;
         }
-        #timeline .timeline-item.setback {
-            background-color: #f3f4f6;
+        #timeline .timeline-node.setback .timeline-card {
+            background: #f9fafb;
+            border-color: rgba(209, 213, 219, 0.8);
         }
-        #timeline .timeline-item.setback:hover {
-            transform: translateY(-2px) rotate(1deg);
+        #timeline .timeline-node.setback .timeline-card:focus-within {
+            transform: translateY(-4px) rotate(1deg);
         }
-        #timeline .chip {
-            display: inline-block;
-            padding: 0.125rem 0.5rem;
-            margin: 0 0.25rem 0.25rem 0;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            background-color: #e5e7eb;
+        #timeline .timeline-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+        #timeline .timeline-year {
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
             color: #1f2937;
         }
-        #timeline .show-more {
+        #timeline .timeline-title-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            line-height: 1.4;
+            color: #111827;
+        }
+        #timeline .timeline-location {
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+        #timeline .timeline-summary {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #374151;
+        }
+        #timeline .timeline-summary ul {
+            list-style: disc;
+            padding-left: 1.1rem;
+            display: grid;
+            gap: 0.5rem;
+        }
+        #timeline .timeline-extra {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #374151;
+        }
+        #timeline .timeline-extra[hidden] {
+            display: none;
+        }
+        #timeline .timeline-actions {
+            display: flex;
+            justify-content: flex-start;
+        }
+        #timeline .timeline-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0;
+            font-size: 0.85rem;
+            font-weight: 500;
             color: #007aff;
-            font-size: 0.875rem;
+            background: transparent;
+            border: none;
             cursor: pointer;
         }
+        #timeline .timeline-toggle:focus-visible {
+            outline: 2px solid #007aff;
+            outline-offset: 4px;
+        }
+        #timeline .timeline-toggle span[aria-hidden="true"] {
+            font-size: 0.8rem;
+            transition: transform 0.2s ease;
+        }
+        #timeline .timeline-toggle.is-expanded span[aria-hidden="true"] {
+            transform: rotate(180deg);
+        }
+        #timeline .timeline-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        #timeline .timeline-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.65rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #1f2937;
+            background: rgba(37, 99, 235, 0.1);
+        }
+        #timeline .timeline-chip.is-lesson {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        #timeline .timeline-chip.is-link {
+            background: rgba(37, 99, 235, 0.12);
+            color: #0b5394;
+            text-decoration: none;
+        }
+        #timeline .timeline-chip.is-link:hover,
+        #timeline .timeline-chip.is-link:focus-visible {
+            text-decoration: underline;
+        }
+        #timeline .timeline-scroll::-webkit-scrollbar {
+            height: 6px;
+        }
+        #timeline .timeline-scroll::-webkit-scrollbar-thumb {
+            background: rgba(15, 23, 42, 0.25);
+            border-radius: 9999px;
+        }
+        #timeline .timeline-scroll::-webkit-scrollbar-track {
+            background: rgba(229, 231, 235, 0.6);
+        }
+        @media (hover: hover) {
+            #timeline .timeline-node.setback .timeline-card:hover {
+                transform: translateY(-4px) rotate(1deg);
+            }
+        }
+        #timeline .timeline-node.setback .timeline-card.is-tilting {
+            transform: translateY(-4px) rotate(-1deg);
+        }
+        @media (min-width: 768px) {
+            #timeline .timeline-scroll {
+                padding-left: 3rem;
+            }
+        }
+        @media (min-width: 1024px) {
+            #timeline .timeline-scroll {
+                flex-direction: row;
+                align-items: stretch;
+                gap: 2.5rem;
+                padding: 0 0 3.5rem;
+                overflow-x: auto;
+                scroll-snap-type: x proximity;
+            }
+            #timeline .timeline-scroll::before {
+                top: auto;
+                bottom: 1.25rem;
+                left: 0;
+                right: 0;
+                border-left: none;
+                border-bottom: 2px dotted #d1d5db;
+            }
+            #timeline .timeline-node {
+                flex: 0 0 320px;
+            }
+            #timeline .timeline-node::before {
+                top: auto;
+                bottom: 1.25rem;
+                left: 50%;
+                transform: translate(-50%, 50%);
+            }
+            #timeline .timeline-card {
+                height: 100%;
+            }
+        }
+        @media (min-width: 1024px) and (hover: hover) {
+            #timeline .timeline-scroll {
+                cursor: grab;
+            }
+            #timeline .timeline-scroll.is-dragging {
+                cursor: grabbing;
+            }
+        }
         @keyframes timeline-pulse {
-            0% { box-shadow: 0 0 0 0 rgba(0,122,255,0.5); }
-            70% { box-shadow: 0 0 0 10px rgba(0,122,255,0); }
-            100% { box-shadow: 0 0 0 0 rgba(0,122,255,0); }
+            0% {
+                box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.32);
+            }
+            70% {
+                box-shadow: 0 0 0 12px rgba(37, 99, 235, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+            }
         }
         @media (prefers-reduced-motion: reduce) {
-            #timeline .timeline-item {
+            #timeline .timeline-card,
+            #timeline .timeline-node.setback .timeline-card:hover,
+            #timeline .timeline-node.setback .timeline-card:focus-within,
+            #timeline .timeline-node.setback .timeline-card.is-tilting {
                 transition: none;
+                transform: none;
             }
-            #timeline .timeline-item.award.visible {
+            #timeline .timeline-node::before,
+            #timeline .timeline-node.award.visible .timeline-card {
                 animation: none;
+            }
+            #timeline .timeline-toggle span[aria-hidden="true"] {
+                transition: none;
             }
         }
     </style>
@@ -370,7 +584,7 @@
                 <a href="#homepage" class="nav-link px-4 py-2 md:px-0 md:py-0">Home</a>
                 <a href="#case-studies" class="nav-link px-4 py-2 md:px-0 md:py-0">Case Studies</a>
                 <a href="#contact" class="nav-link px-4 py-2 md:px-0 md:py-0">Contact</a>
-                <a href="#timeline" class="nav-link px-4 py-2 md:px-0 md:py-0">My Path</a>
+                <a href="#timeline" class="nav-link px-4 py-2 md:px-0 md:py-0">Timeline</a>
             </div>
         </div>
     </nav>
@@ -416,105 +630,168 @@
     </main>
 
     <!-- Timeline Section -->
-    <section id="timeline" class="section">
-        <div class="container">
-            <h2 class="text-4xl font-bold text-center mb-8">My Life &amp; Career Path</h2>
-            <div class="timeline-track">
-                <div class="timeline-item">
-                    <span class="text-sm font-semibold text-gray-600">Oct 1997</span>
-                    <h3 class="text-lg font-semibold">Born | Nerul, Navi Mumbai 🐣🌴</h3>
-                    <ul class="list-disc pl-5">
-                        <li>Curious Nerul native, always asking "why?"</li>
-                    </ul>
-                </div>
-                <div class="timeline-item award">
-                    <span class="text-sm font-semibold text-gray-600">2004–2014</span>
-                    <h3 class="text-lg font-semibold">School Years | Nerul 🎒</h3>
-                    <ul class="list-disc pl-5 space-y-1">
-                        <li>Loved science; oratory wins 🎤</li>
-                        <li>District chess trial taught resilience ♟️</li>
-                    </ul>
-                    <div class="more hidden">
-                        <ul class="list-disc pl-5 space-y-1">
-                            <li>Astrophysics &amp; particle physics fan ✨; quiz regular 🧠</li>
-                            <li>Recognition: “Master of Augustine” 🏆</li>
-                        </ul>
-                    </div>
-                    <button class="show-more" aria-expanded="false">Show more</button>
-                    <div class="mt-2">
-                        <span class="chip">Science</span>
-                        <span class="chip">Oratory</span>
-                        <span class="chip">Chess</span>
-                        <span class="chip">Quizzes</span>
-                        <span class="chip">Resilience</span>
-                        <span class="chip">Recognition</span>
-                    </div>
-                </div>
-                <div class="timeline-item award">
-                    <span class="text-sm font-semibold text-gray-600">2014–2016</span>
-                    <h3 class="text-lg font-semibold">Jr. College (PCM + CS) 📚💻</h3>
-                    <ul class="list-disc pl-5 space-y-1">
-                        <li>Balanced entrance prep with boards; kept presenting</li>
-                        <li>Built science projects—wins and lessons</li>
-                    </ul>
-                    <div class="more hidden">
-                        <ul class="list-disc pl-5 space-y-1">
-                            <li>Recognition: “Mr. MGM” 🏆</li>
-                        </ul>
-                    </div>
-                    <button class="show-more" aria-expanded="false">Show more</button>
-                    <div class="mt-2">
-                        <span class="chip">Science</span>
-                        <span class="chip">Oratory</span>
-                        <span class="chip">Recognition</span>
-                    </div>
-                </div>
-                <div class="timeline-item setback">
-                    <span class="text-sm font-semibold text-gray-600">2016–2020</span>
-                    <h3 class="text-lg font-semibold">Engineering (Electronics &amp; Telecom) 🤖🔧</h3>
-                    <ul class="list-disc pl-5 space-y-1">
-                        <li>JEE detour; made it count</li>
-                        <li>Student council to IEEE Tech Head, leading IoT work</li>
-                    </ul>
-                    <div class="more hidden">
-                        <ul class="list-disc pl-5 space-y-1">
-                            <li>Drone + ML final project; later IEEE Chairperson</li>
-                            <li>Quizzes and COVID disruptions honed adaptability</li>
-                        </ul>
-                    </div>
-                    <button class="show-more" aria-expanded="false">Show more</button>
-                    <div class="mt-2">
-                        <span class="chip">Leadership</span>
-                        <span class="chip">IoT</span>
-                        <span class="chip">ML/AI</span>
-                        <span class="chip">Quizzes</span>
-                        <span class="chip">Resilience</span>
-                    </div>
-                </div>
-                <div class="timeline-item award">
-                    <span class="text-sm font-semibold text-gray-600">2020–Present</span>
-                    <h3 class="text-lg font-semibold">Product Journey @ Jio (summary only) 🚀</h3>
-                    <ul class="list-disc pl-5 space-y-1">
-                        <li>APM to Product Manager across AI, commerce &amp; productivity</li>
-                        <li>See Experience section for more</li>
-                    </ul>
-                    <div class="mt-2">
-                        <a href="#case-studies" class="chip">🏆 Awards</a>
-                        <a href="#case-studies" class="chip">📈 Impact</a>
-                        <span class="chip">ML/AI</span>
-                        <span class="chip">Leadership</span>
-                    </div>
-                </div>
-                <div class="timeline-item">
-                    <span class="text-sm font-semibold text-gray-600">Now</span>
-                    <h3 class="text-lg font-semibold">What’s Next 🌟</h3>
-                    <ul class="list-disc pl-5 space-y-1">
-                        <li>Building at the intersection of AI, product growth &amp; delight</li>
-                        <li>Forever student—curiosity on, humility intact</li>
-                    </ul>
-                    <div class="mt-2">
-                        <span class="chip">ML/AI</span>
-                    </div>
+    <section id="timeline" class="section" aria-labelledby="timeline-title">
+        <div class="container timeline-container">
+            <div class="timeline-header">
+                <span class="timeline-kicker">My journey</span>
+                <h2 id="timeline-title" class="timeline-title">Timeline</h2>
+                <p class="timeline-subtitle">My life &amp; career path—moments that shaped how I build and lead today.</p>
+            </div>
+            <div class="timeline-wrapper">
+                <div class="timeline-scroll" role="list" tabindex="0" aria-label="Life and career timeline">
+                    <article class="timeline-node" role="listitem">
+                        <div class="timeline-card">
+                            <header class="timeline-meta">
+                                <span class="timeline-year">Oct 1997</span>
+                                <h3 class="timeline-title-text">Born 🐣🌴</h3>
+                                <span class="timeline-location">Nerul, Navi Mumbai</span>
+                            </header>
+                            <div class="timeline-summary">
+                                <p>Beginnings in the city I still call home—curious, observant, and always asking “why?”.</p>
+                            </div>
+                        </div>
+                    </article>
+                    <article class="timeline-node award" role="listitem">
+                        <div class="timeline-card">
+                            <header class="timeline-meta">
+                                <span class="timeline-year">2004–2014</span>
+                                <h3 class="timeline-title-text">School Years 🎒</h3>
+                                <span class="timeline-location">Nerul</span>
+                            </header>
+                            <div class="timeline-summary">
+                                <ul>
+                                    <li>Loved science after Grade 8 and owned every classroom mic.</li>
+                                    <li>District chess trials humbled me and sharpened resilience.</li>
+                                </ul>
+                            </div>
+                            <div class="timeline-extra" id="timeline-extra-school" hidden>
+                                <ul>
+                                    <li>Astrophysics and particle physics obsession; quiz regular.</li>
+                                    <li>Recognition: Master of Augustine (Student of the Year).</li>
+                                </ul>
+                            </div>
+                            <div class="timeline-actions">
+                                <button class="timeline-toggle" type="button" data-target="timeline-extra-school" data-collapsed-label="Show more" data-expanded-label="Show less" aria-expanded="false" aria-controls="timeline-extra-school">
+                                    <span class="timeline-toggle-label">Show more</span>
+                                    <span aria-hidden="true">▾</span>
+                                </button>
+                            </div>
+                            <div class="timeline-tags">
+                                <span class="timeline-chip">Science</span>
+                                <span class="timeline-chip">Oratory</span>
+                                <span class="timeline-chip">Chess</span>
+                                <span class="timeline-chip">Quizzes</span>
+                                <span class="timeline-chip">Resilience</span>
+                                <span class="timeline-chip">Recognition</span>
+                            </div>
+                        </div>
+                    </article>
+                    <article class="timeline-node award" role="listitem">
+                        <div class="timeline-card">
+                            <header class="timeline-meta">
+                                <span class="timeline-year">2014–2016</span>
+                                <h3 class="timeline-title-text">Jr. College (PCM + CS) 📚💻</h3>
+                                <span class="timeline-location">Nerul</span>
+                            </header>
+                            <div class="timeline-summary">
+                                <ul>
+                                    <li>Balanced PCM + CS with entrances and board prep while presenting.</li>
+                                    <li>Built science projects—celebrated wins and learned from every miss.</li>
+                                </ul>
+                            </div>
+                            <div class="timeline-extra" id="timeline-extra-college" hidden>
+                                <ul>
+                                    <li>Recognition: Mr. MGM (Student of the Year).</li>
+                                </ul>
+                            </div>
+                            <div class="timeline-actions">
+                                <button class="timeline-toggle" type="button" data-target="timeline-extra-college" data-collapsed-label="Show more" data-expanded-label="Show less" aria-expanded="false" aria-controls="timeline-extra-college">
+                                    <span class="timeline-toggle-label">Show more</span>
+                                    <span aria-hidden="true">▾</span>
+                                </button>
+                            </div>
+                            <div class="timeline-tags">
+                                <span class="timeline-chip">Science</span>
+                                <span class="timeline-chip">Oratory</span>
+                                <span class="timeline-chip">Recognition</span>
+                            </div>
+                        </div>
+                    </article>
+                    <article class="timeline-node setback" role="listitem">
+                        <div class="timeline-card">
+                            <header class="timeline-meta">
+                                <span class="timeline-year">2016–2020</span>
+                                <h3 class="timeline-title-text">Engineering (Electronics &amp; Telecom) 🤖🔧</h3>
+                                <span class="timeline-location">Mumbai</span>
+                            </header>
+                            <div class="timeline-summary">
+                                <ul>
+                                    <li>JEE detour led me here—and I made every semester count.</li>
+                                    <li>From student council to IEEE Tech Head shepherding IoT builds.</li>
+                                </ul>
+                            </div>
+                            <div class="timeline-extra" id="timeline-extra-engineering" hidden>
+                                <ul>
+                                    <li>Drone + machine learning capstone and later IEEE Chairperson.</li>
+                                    <li>Quizzes and COVID disruptions sharpened adaptability.</li>
+                                </ul>
+                            </div>
+                            <div class="timeline-actions">
+                                <button class="timeline-toggle" type="button" data-target="timeline-extra-engineering" data-collapsed-label="Show more" data-expanded-label="Show less" aria-expanded="false" aria-controls="timeline-extra-engineering">
+                                    <span class="timeline-toggle-label">Show more</span>
+                                    <span aria-hidden="true">▾</span>
+                                </button>
+                            </div>
+                            <div class="timeline-tags">
+                                <span class="timeline-chip">Leadership</span>
+                                <span class="timeline-chip">IoT</span>
+                                <span class="timeline-chip">ML/AI</span>
+                                <span class="timeline-chip">Quizzes</span>
+                                <span class="timeline-chip">Resilience</span>
+                                <span class="timeline-chip is-lesson">Lesson learned</span>
+                            </div>
+                        </div>
+                    </article>
+                    <article class="timeline-node award" role="listitem">
+                        <div class="timeline-card">
+                            <header class="timeline-meta">
+                                <span class="timeline-year">2020–Present</span>
+                                <h3 class="timeline-title-text">Product Journey @ Jio 🚀</h3>
+                                <span class="timeline-location">Mumbai</span>
+                            </header>
+                            <div class="timeline-summary">
+                                <ul>
+                                    <li>Joined as APM, grew into Product Manager across B2C and AI tracks.</li>
+                                    <li>Shaped AI assistant, commerce, and productivity journeys—see Experience for the full story.</li>
+                                </ul>
+                            </div>
+                            <div class="timeline-tags">
+                                <a class="timeline-chip is-link" href="#case-studies" aria-label="Jump to awards and case studies">🏆 Awards</a>
+                                <a class="timeline-chip is-link" href="#case-studies" aria-label="Jump to impact case studies">📈 Impact</a>
+                                <span class="timeline-chip">ML/AI</span>
+                                <span class="timeline-chip">Leadership</span>
+                            </div>
+                        </div>
+                    </article>
+                    <article class="timeline-node" role="listitem">
+                        <div class="timeline-card">
+                            <header class="timeline-meta">
+                                <span class="timeline-year">Now</span>
+                                <h3 class="timeline-title-text">What’s Next 🌟</h3>
+                                <span class="timeline-location">Navi Mumbai</span>
+                            </header>
+                            <div class="timeline-summary">
+                                <ul>
+                                    <li>Building at the intersection of AI, product growth, and user delight.</li>
+                                    <li>Forever student—curiosity on, humility intact.</li>
+                                </ul>
+                            </div>
+                            <div class="timeline-tags">
+                                <span class="timeline-chip">ML/AI</span>
+                                <span class="timeline-chip">Resilience</span>
+                            </div>
+                        </div>
+                    </article>
                 </div>
             </div>
         </div>
@@ -703,27 +980,135 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const timeline = document.getElementById('timeline');
-            if (timeline) {
-                const items = timeline.querySelectorAll('.timeline-item');
-                const observer = new IntersectionObserver((entries) => {
+            const timelineSection = document.getElementById('timeline');
+            if (!timelineSection) {
+                return;
+            }
+
+            const nodes = Array.from(timelineSection.querySelectorAll('.timeline-node'));
+            const scroller = timelineSection.querySelector('.timeline-scroll');
+            const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+            const revealAllNodes = () => {
+                nodes.forEach(node => node.classList.add('visible'));
+            };
+
+            let observer;
+
+            const handleReduceMotionChange = (event) => {
+                if (event.matches) {
+                    revealAllNodes();
+                    if (observer) {
+                        observer.disconnect();
+                    }
+                }
+            };
+
+            if (reduceMotionQuery.matches) {
+                revealAllNodes();
+            } else if (nodes.length) {
+                observer = new IntersectionObserver((entries) => {
                     entries.forEach(entry => {
                         if (entry.isIntersecting) {
                             entry.target.classList.add('visible');
+                            observer.unobserve(entry.target);
                         }
                     });
-                }, { threshold: 0.2 });
-                items.forEach(item => observer.observe(item));
+                }, { threshold: 0.35, rootMargin: '0px 0px -10%' });
+                nodes.forEach(node => observer.observe(node));
 
-                timeline.querySelectorAll('.show-more').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const more = btn.previousElementSibling;
-                        const expanded = more.classList.toggle('hidden');
-                        btn.textContent = expanded ? 'Show less' : 'Show more';
-                        btn.setAttribute('aria-expanded', expanded);
-                    });
+                if (typeof reduceMotionQuery.addEventListener === 'function') {
+                    reduceMotionQuery.addEventListener('change', handleReduceMotionChange);
+                } else if (typeof reduceMotionQuery.addListener === 'function') {
+                    reduceMotionQuery.addListener(handleReduceMotionChange);
+                }
+            }
+
+            timelineSection.querySelectorAll('.timeline-toggle').forEach(button => {
+                const targetId = button.getAttribute('data-target');
+                const target = targetId ? document.getElementById(targetId) : null;
+                const labelEl = button.querySelector('.timeline-toggle-label');
+                const collapsedLabel = button.getAttribute('data-collapsed-label') || 'Show more';
+                const expandedLabel = button.getAttribute('data-expanded-label') || 'Show less';
+
+                if (!target || !labelEl || !timelineSection.contains(target)) {
+                    return;
+                }
+
+                button.addEventListener('click', () => {
+                    const willExpand = target.hasAttribute('hidden');
+                    if (willExpand) {
+                        target.removeAttribute('hidden');
+                    } else {
+                        target.setAttribute('hidden', '');
+                    }
+                    button.setAttribute('aria-expanded', String(willExpand));
+                    labelEl.textContent = willExpand ? expandedLabel : collapsedLabel;
+                    button.classList.toggle('is-expanded', willExpand);
+                });
+            });
+
+            timelineSection.querySelectorAll('.timeline-node.setback .timeline-card').forEach(card => {
+                card.addEventListener('pointerdown', (event) => {
+                    if (event.pointerType === 'touch') {
+                        card.classList.add('is-tilting');
+                    }
+                });
+                const clearTilt = () => {
+                    card.classList.remove('is-tilting');
+                };
+                card.addEventListener('pointerup', clearTilt);
+                card.addEventListener('pointercancel', clearTilt);
+                card.addEventListener('pointerleave', clearTilt);
+            });
+
+            if (scroller) {
+                scroller.addEventListener('wheel', (event) => {
+                    if (window.innerWidth >= 1024 && Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
+                        event.preventDefault();
+                        scroller.scrollLeft += event.deltaY;
+                    }
+                }, { passive: false });
+
+                let isDragging = false;
+                let pointerId = null;
+                let startX = 0;
+                let startScroll = 0;
+
+                scroller.addEventListener('pointerdown', (event) => {
+                    if (window.innerWidth < 1024 || event.pointerType === 'touch') {
+                        return;
+                    }
+                    isDragging = true;
+                    pointerId = event.pointerId;
+                    startX = event.clientX;
+                    startScroll = scroller.scrollLeft;
+                    scroller.setPointerCapture(pointerId);
+                    scroller.classList.add('is-dragging');
                 });
 
+                scroller.addEventListener('pointermove', (event) => {
+                    if (!isDragging || event.pointerId !== pointerId) {
+                        return;
+                    }
+                    const deltaX = event.clientX - startX;
+                    scroller.scrollLeft = startScroll - deltaX;
+                });
+
+                const endDrag = (event) => {
+                    if (!isDragging || (pointerId !== null && event.pointerId !== pointerId)) {
+                        return;
+                    }
+                    if (pointerId !== null) {
+                        scroller.releasePointerCapture(pointerId);
+                    }
+                    isDragging = false;
+                    pointerId = null;
+                    scroller.classList.remove('is-dragging');
+                };
+
+                scroller.addEventListener('pointerup', endDrag);
+                scroller.addEventListener('pointercancel', endDrag);
+                scroller.addEventListener('pointerleave', endDrag);
             }
         });
     </script>
