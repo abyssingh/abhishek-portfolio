@@ -15,7 +15,8 @@ load_dotenv()
 
 KNOWLEDGE_DIR = Path(__file__).parent / "knowledge"
 NO_INFO_RESPONSE = "I don’t have that information."
-MODEL_NAME = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+MODEL_NAME = os.getenv("OPENAI_MODEL", "llama-3.3-70b-versatile")
+DEFAULT_GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 
 app = FastAPI()
 
@@ -115,11 +116,14 @@ async def chat(request: ChatRequest) -> ChatResponse:
 
     context = build_context(scored_results)
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GROQ_API_KEY") or os.getenv("OPENAI_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=500, detail="OPENAI_API_KEY is not set.")
+        raise HTTPException(
+            status_code=500,
+            detail="GROQ_API_KEY (or OPENAI_API_KEY) is not set."
+        )
 
-    base_url = os.getenv("OPENAI_BASE_URL")
+    base_url = os.getenv("OPENAI_BASE_URL", DEFAULT_GROQ_BASE_URL)
     client = OpenAI(api_key=api_key, base_url=base_url)
 
     system_prompt = (
