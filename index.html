@@ -347,7 +347,7 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-900">
+<body class="bg-gray-50 text-gray-900" data-api-base="http://localhost:8000">
 
     <!-- Sticky Navigation Bar -->
     <nav class="header-sticky border-b border-gray-200">
@@ -733,6 +733,9 @@
                 <h4 class="text-xl font-semibold">Abhishek's AI Assistant</h4>
                 <button id="chat-close-btn">&times;</button>
             </div>
+            <div class="px-4 pt-3 text-sm text-gray-100 bg-blue-600">
+                Ask me anything about my experience
+            </div>
             <div id="chat-messages">
                 <!-- Chat messages will be appended here -->
                 <div class="chat-bubble assistant">Hello! I'm here to help you learn more about Abhishek's experience. What would you like to know?</div>
@@ -870,40 +873,10 @@
             const chatMessages = document.getElementById('chat-messages');
             const chatForm = document.getElementById('chat-input-form');
             const chatInput = document.getElementById('chat-input');
+            const apiBaseUrl = document.body.dataset.apiBaseUrl || 'http://localhost:8000';
+            const chatEndpoint = `${apiBaseUrl.replace(/\\/$/, '')}/chat`;
             let isChatOpen = false;
 
-            // Raw content from resume and case studies to act as the AI's knowledge base
-            const knowledgeBase = `
-                Resume Summary:
-                Results-driven product manager with 5.1+ years in B2C e-commerce, fintech, and Al products. Expert in full-cycle product development, CRO, personalization, API integration, app performance optimization, and Al technology integration (LLM frameworks) to drive user retention and business growth across market segments.
-
-                Experience:
-                - Jio Platforms Ltd., Product Manager B2C & Al Apps (Nov. 2020 - Present)
-                - Driving AI Smart Assistant development, defining MVP, USPs, and success metrics.
-                - Partnering with AI/ML teams to embed multimodal LLMs.
-                - Led Wealth Management App development for Jio & BlackRock, creating seamless onboarding experiences with AI-powered voice interactions.
-                - Led the development and integration of the Retail Account (SSO-based login), connecting apps like JioMart, Ajio, Tira, Netmeds, and Digital. Enabled faster onboarding, cross-app personalization, and unified profiles.
-                - Enhanced UI/UX of 'Need Help' section with contextual FAQs, leading to a 16% reduction in support tickets and 9% overall cost decrease.
-                - Led a cross-functional initiative to integrate JioMart into MyJios Universal Search, increasing consumer electronics orders by 10%.
-
-                Skills:
-                - Product Management: Ecommerce, Quick Commerce, Agile/Scrum, Product Roadmapping, User Story Creation, A/B Testing, Prioritization (RICE, MOSCOW), Product Metrics & KPIs, MVP, GTM, Growth strategy.
-                - Soft Skills: Cross-functional Leadership, Stakeholder Management, Problem Solving, Strategic Thinking, User Empathy.
-                - Tools: Figma, Excel, Google Analytics, Looker Studio, Miro, CleverTap, Branch.io, Appsflyer, Balsamiq, Powerpoint, Word, Tableau, OneNote, Azure DevOps, Postman-API.
-
-                Case Study 1 (Fantasy Sports App):
-                - Problem: 95% of new players quit before Day 30 due to fear of losing money, choice overload, and lack of knowledge.
-                - Solution: Built a user-centric app with a Smart-Start feature (risk-free entry), Built-in AI Coach (AI Quick-Scout), and a Progression Engine.
-                - Metrics: Targeted 45% Day-1 active users (vs. 32% benchmark) and 12% Day-30 active users (vs. 7% benchmark).
-                - Impact: Solved user anxiety, leading to improved retention rates.
-
-                Case Study 2 (Strava Training Plan):
-                - Problem: Strava lacked structured, personalized training features.
-                - Solution: Introduced an Adaptive Training Plan leveraging cross-training data (cycling, strength training).
-                - Metrics: Measured user adoption, program completion rates, and improvement in running performance.
-                - Impact: Differentiated Strava by offering a holistic, adaptive experience, driving higher user retention and engagement. My personal passion for running inspired this project.
-            `;
-            
             // Function to toggle chat window visibility
             chatButton.addEventListener('click', () => {
                 isChatOpen = !isChatOpen;
@@ -958,26 +931,11 @@
                 chatInput.value = '';
                 showLoader();
 
-                const systemPrompt = `You are an AI assistant representing Abhishek Singh, a product manager. Your purpose is to answer questions about his professional experience, skills, and projects. Use ONLY the information provided in the context below. Do not invent information or stray from the provided context. If a question cannot be answered from the provided information, state that you do not have that information.
-
-                Context about Abhishek Singh:
-                ${knowledgeBase}
-
-                ---\nUser's Question: ${userMessage}
-                Assistant's Answer:`;
-                
-                // API call to Gemini
-                const payload = {
-                    contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
-                };
-                const apiKey = "";
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-
                 try {
-                    const response = await fetch(apiUrl, {
+                    const response = await fetch(chatEndpoint, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
+                        body: JSON.stringify({ question: userMessage })
                     });
 
                     if (!response.ok) {
@@ -985,17 +943,9 @@
                     }
 
                     const result = await response.json();
-                    
-                    if (result.candidates && result.candidates.length > 0 &&
-                        result.candidates[0].content && result.candidates[0].content.parts &&
-                        result.candidates[0].content.parts.length > 0) {
-                        const aiResponse = result.candidates[0].content.parts[0].text;
-                        appendMessage(aiResponse, 'assistant');
-                    } else {
-                        appendMessage("Sorry, I couldn't process that request. Please try again.", 'assistant');
-                    }
+                    appendMessage(result.answer || "Sorry, I couldn't process that request. Please try again.", 'assistant');
                 } catch (error) {
-                    console.error('Error fetching from Gemini API:', error);
+                    console.error('Error fetching from assistant API:', error);
                     appendMessage("An error occurred. Please try again later.", 'assistant');
                 } finally {
                     hideLoader();
