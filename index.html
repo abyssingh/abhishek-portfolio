@@ -698,8 +698,7 @@
 
     <!-- Background Music -->
     <audio id="background-music" loop preload="auto">
-        <source src="interstellar_chase_2.mp3" type="audio/mpeg">
-        <!-- You can add your own music file here -->
+        <!-- Add your own music file here -->
         <!-- <source src="your-music-file.mp3" type="audio/mpeg"> -->
     </audio>
 
@@ -755,6 +754,13 @@
             const musicIcon = document.getElementById('music-icon');
             const musicMutedIcon = document.getElementById('music-muted-icon');
             let isPlaying = false;
+            const audioSource = backgroundMusic.querySelector('source');
+            const hasAudioSource = audioSource && audioSource.getAttribute('src');
+
+            if (!hasAudioSource) {
+                musicToggle.classList.add('hidden');
+                return;
+            }
 
             // Function to toggle music
             const toggleMusic = () => {
@@ -874,7 +880,8 @@
             const chatForm = document.getElementById('chat-input-form');
             const chatInput = document.getElementById('chat-input');
             const apiBaseUrl = document.body.dataset.apiBaseUrl || 'http://localhost:8000';
-            const chatEndpoint = `${apiBaseUrl.replace(/\\/$/, '')}/chat`;
+            const normalizedBaseUrl = apiBaseUrl.endsWith('/') ? apiBaseUrl.slice(0, -1) : apiBaseUrl;
+            const chatEndpoint = `${normalizedBaseUrl}/chat`;
             let isChatOpen = false;
 
             // Function to toggle chat window visibility
