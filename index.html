@@ -1179,9 +1179,10 @@
                 let fetched = false;
 
                 // 1. Try local path (works on local server and GitHub Pages)
+                // Use relative path './' to support GitHub Pages subfolder deployment
                 try {
                     const localPromises = KNOWLEDGE_FILES.map(async (filename) => {
-                        const res = await fetch(`/${KNOWLEDGE_FOLDER}/${filename}`);
+                        const res = await fetch(`./${KNOWLEDGE_FOLDER}/${filename}`);
                         if (!res.ok) throw new Error(`Local: ${res.status}`);
                         const content = await res.text();
                         return { filename, content };
