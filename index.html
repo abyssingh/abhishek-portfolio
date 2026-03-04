@@ -85,54 +85,6 @@
             -webkit-text-fill-color: transparent;
         }
 
-        /* Music Toggle Styles */
-        #music-toggle-container {
-            position: fixed;
-            top: 1rem;
-            left: 1rem;
-            z-index: 2000;
-        }
-
-        #music-toggle {
-            background-color: #007aff;
-            color: white;
-            padding: 0.75rem;
-            border-radius: 9999px;
-            box-shadow: 0 4px 20px rgba(0, 122, 255, 0.3);
-            cursor: pointer;
-            transition: all 0.3s ease-in-out;
-            width: 3rem;
-            height: 3rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: none;
-            outline: none;
-        }
-
-        #music-toggle:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 25px rgba(0, 122, 255, 0.4);
-            background-color: #0066cc;
-        }
-
-        #music-toggle:active {
-            transform: scale(0.95);
-        }
-
-        #music-toggle.muted {
-            background-color: #ff3b30;
-            box-shadow: 0 4px 20px rgba(255, 59, 48, 0.3);
-        }
-
-        #music-toggle.muted:hover {
-            background-color: #d70015;
-            box-shadow: 0 6px 25px rgba(255, 59, 48, 0.4);
-        }
-
-        #music-toggle svg {
-            transition: opacity 0.2s ease-in-out;
-        }
 
         /* Chat Assistant Styles */
         #chat-container {
@@ -389,21 +341,6 @@
                 padding: 1rem;
             }
 
-            #music-toggle-container {
-                top: 0.5rem;
-                left: 0.5rem;
-            }
-
-            #music-toggle {
-                width: 2.5rem;
-                height: 2.5rem;
-                padding: 0.5rem;
-            }
-
-            #music-toggle svg {
-                width: 1.25rem;
-                height: 1.25rem;
-            }
 
             .header-sticky {
                 padding: 1rem 0;
@@ -449,10 +386,37 @@
             }
 
             #chat-window {
-                width: 90vw;
-                height: 80vh;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                width: 100vw;
+                height: 100dvh;
+                /* Dynamic viewport height to prevent keyboard cropping */
                 max-width: none;
                 max-height: none;
+                border-radius: 0;
+                /* Flat edges for full screen */
+                transform: translateY(100%);
+                transform-origin: center;
+                z-index: 3000;
+            }
+
+            #chat-window.open {
+                transform: translateY(0);
+                display: flex;
+            }
+
+            #chat-header {
+                /* Safe area padding for mobile notches */
+                padding-top: max(1rem, env(safe-area-inset-top));
+                border-radius: 0;
+            }
+
+            #chat-input-form {
+                /* Safe area padding for mobile home bar */
+                padding-bottom: max(1rem, env(safe-area-inset-bottom));
             }
         }
 
@@ -948,30 +912,6 @@
         <p>&copy; 2024 Abhishek Singh. All rights reserved.</p>
     </footer>
 
-    <!-- Background Music -->
-    <audio id="background-music" loop preload="auto">
-        <source src="interstellar_chase_2.mp3" type="audio/mpeg">
-        <!-- You can add your own music file here -->
-        <!-- <source src="your-music-file.mp3" type="audio/mpeg"> -->
-    </audio>
-
-    <!-- Music Toggle Button -->
-    <div id="music-toggle-container">
-        <button id="music-toggle" aria-label="Toggle background music">
-            <svg id="music-icon" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-            </svg>
-            <svg id="music-muted-icon" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 hidden" viewBox="0 0 24 24"
-                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                <line x1="23" y1="9" x2="17" y2="15"></line>
-                <line x1="17" y1="9" x2="23" y2="15"></line>
-            </svg>
-        </button>
-    </div>
-
     <!-- Floating Chat Assistant -->
     <div id="chat-container">
         <!-- Floating Button -->
@@ -1014,109 +954,6 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Music functionality
-            const backgroundMusic = document.getElementById('background-music');
-            const musicToggle = document.getElementById('music-toggle');
-            const musicIcon = document.getElementById('music-icon');
-            const musicMutedIcon = document.getElementById('music-muted-icon');
-            let isPlaying = false;
-
-            // Function to toggle music
-            const toggleMusic = () => {
-                if (isPlaying) {
-                    backgroundMusic.pause();
-                    musicToggle.classList.add('muted');
-                    musicIcon.classList.add('hidden');
-                    musicMutedIcon.classList.remove('hidden');
-                    sessionStorage.setItem('musicMuted', 'true');
-                } else {
-                    backgroundMusic.play().catch(e => {
-                        console.log('Audio play failed:', e);
-                        // If autoplay fails, we'll handle it gracefully
-                    });
-                    musicToggle.classList.remove('muted');
-                    musicIcon.classList.remove('hidden');
-                    musicMutedIcon.classList.add('hidden');
-                    sessionStorage.setItem('musicMuted', 'false');
-                }
-                isPlaying = !isPlaying;
-            };
-
-            // Initialize music state
-            const initializeMusic = () => {
-                // Use sessionStorage instead of localStorage to only persist within session
-                const musicMuted = sessionStorage.getItem('musicMuted');
-
-                // Always try to autoplay on fresh load, only respect muted state within same session
-                if (musicMuted !== 'true') {
-                    // Try multiple approaches for autoplay
-                    const attemptAutoplay = () => {
-                        backgroundMusic.play().then(() => {
-                            isPlaying = true;
-                            musicToggle.classList.remove('muted');
-                            musicIcon.classList.remove('hidden');
-                            musicMutedIcon.classList.add('hidden');
-                        }).catch(e => {
-                            console.log('Autoplay blocked, will try on user interaction:', e);
-                            // Show playing state but music won't start until user interaction
-                            isPlaying = false;
-                            musicToggle.classList.remove('muted');
-                            musicIcon.classList.remove('hidden');
-                            musicMutedIcon.classList.add('hidden');
-                        });
-                    };
-
-                    // Try immediate autoplay
-                    attemptAutoplay();
-
-                    // Also try after a short delay
-                    setTimeout(attemptAutoplay, 100);
-                } else {
-                    // Music was muted in this session
-                    isPlaying = false;
-                    musicToggle.classList.add('muted');
-                    musicIcon.classList.add('hidden');
-                    musicMutedIcon.classList.remove('hidden');
-                }
-            };
-
-            // Event listeners
-            musicToggle.addEventListener('click', toggleMusic);
-
-            // Handle audio events
-            backgroundMusic.addEventListener('play', () => {
-                isPlaying = true;
-            });
-
-            backgroundMusic.addEventListener('pause', () => {
-                isPlaying = false;
-            });
-
-            // Initialize music when page loads
-            initializeMusic();
-
-            // Handle user interaction to enable autoplay (fallback)
-            const enableAutoplayOnInteraction = () => {
-                if (!isPlaying && sessionStorage.getItem('musicMuted') !== 'true') {
-                    backgroundMusic.play().then(() => {
-                        isPlaying = true;
-                        musicToggle.classList.remove('muted');
-                        musicIcon.classList.remove('hidden');
-                        musicMutedIcon.classList.add('hidden');
-                    }).catch(e => {
-                        console.log('Audio play failed even after user interaction:', e);
-                    });
-                }
-                // Remove the event listeners after first interaction
-                document.removeEventListener('click', enableAutoplayOnInteraction);
-                document.removeEventListener('keydown', enableAutoplayOnInteraction);
-                document.removeEventListener('touchstart', enableAutoplayOnInteraction);
-            };
-
-            // Add event listeners for user interaction (fallback for autoplay restrictions)
-            document.addEventListener('click', enableAutoplayOnInteraction);
-            document.addEventListener('keydown', enableAutoplayOnInteraction);
-            document.addEventListener('touchstart', enableAutoplayOnInteraction);
 
         });
     </script>
