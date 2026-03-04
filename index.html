@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abhishek Singh | Product Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f5f7;
+            color: #1d1d1f;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .header-sticky {
+            position: sticky;
+            top: 0;
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        .nav-link {
+            transition: color 0.2s ease-in-out;
+            cursor: pointer;
+        }
+
+        .nav-link:hover {
+            color: #007aff;
+        }
+
+        .section {
+            padding: 4rem 0;
+        }
+
+        .metric-card {
+            background-color: #ffffff;
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 4px 60px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 80px rgba(0, 0, 0, 0.1);
+        }
+
+        .case-study {
+            background-color: #ffffff;
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 60px rgba(0, 0, 0, 0.05);
+        }
+
+        .contact-card {
+            background-color: #ffffff;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 4px 60px rgba(0, 0, 0, 0.05);
+        }
+
+        .social-link {
+            transition: transform 0.2s ease;
+        }
+
+        .social-link:hover {
+            transform: scale(1.1);
+        }
+
+        .text-gradient {
+            background-image: linear-gradient(to right, #007aff, #33a7ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Music Toggle Styles */
+        #music-toggle-container {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 2000;
+        }
+
+        #music-toggle {
+            background-color: #007aff;
+            color: white;
+            padding: 0.75rem;
+            border-radius: 9999px;
+            box-shadow: 0 4px 20px rgba(0, 122, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            width: 3rem;
+            height: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            outline: none;
+        }
+
+        #music-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(0, 122, 255, 0.4);
+            background-color: #0066cc;
+        }
+
+        #music-toggle:active {
+            transform: scale(0.95);
+        }
+
+        #music-toggle.muted {
+            background-color: #ff3b30;
+            box-shadow: 0 4px 20px rgba(255, 59, 48, 0.3);
+        }
+
+        #music-toggle.muted:hover {
+            background-color: #d70015;
+            box-shadow: 0 6px 25px rgba(255, 59, 48, 0.4);
+        }
+
+        #music-toggle svg {
+            transition: opacity 0.2s ease-in-out;
+        }
+
+        /* Chat Assistant Styles */
+        #chat-container {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            z-index: 2000;
+        }
+
+        #chat-button {
+            background-color: #007aff;
+            color: white;
+            padding: 1rem;
+            border-radius: 9999px;
+            box-shadow: 0 10px 20px rgba(0, 122, 255, 0.3);
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            width: 4rem;
+            height: 4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #chat-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 15px 30px rgba(0, 122, 255, 0.4);
+        }
+
+        #chat-window {
+            width: 90vw;
+            height: 80vh;
+            max-width: 400px;
+            max-height: 600px;
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            position: absolute;
+            bottom: calc(4rem + 1rem);
+            /* Height of button + gap */
+            right: 0;
+            transform: scale(0.95);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            transform-origin: bottom right;
+        }
+
+        #chat-window.open {
+            transform: scale(1);
+            opacity: 1;
+            pointer-events: auto;
+            display: flex;
+        }
+
+        #chat-header {
+            background-color: #007aff;
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top-left-radius: 1rem;
+            border-top-right-radius: 1rem;
+        }
+
+        #chat-close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        #chat-messages {
+            flex-grow: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .chat-bubble {
+            max-width: 85%;
+            padding: 0.75rem;
+            border-radius: 12px;
+            word-wrap: break-word;
+        }
+
+        .chat-bubble.user {
+            background-color: #e5e5ea;
+            color: #1d1d1f;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-bubble.assistant {
+            background-color: #007aff;
+            color: white;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        #chat-input-form {
+            padding: 1rem;
+            border-top: 1px solid #e5e5ea;
+            display: flex;
+            gap: 8px;
+        }
+
+        #chat-input {
+            flex-grow: 1;
+            padding: 0.75rem;
+            border-radius: 20px;
+            border: 1px solid #dcdce0;
+            outline: none;
+        }
+
+        #chat-submit-btn {
+            background-color: #007aff;
+            color: white;
+            border-radius: 9999px;
+            padding: 0 1rem;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        #chat-submit-btn:hover {
+            background-color: #33a7ff;
+        }
+
+        .loader-dots {
+            display: flex;
+            align-items: center;
+        }
+
+        .loader-dots span {
+            width: 8px;
+            height: 8px;
+            background-color: #dcdce0;
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: dot-animation 1s infinite;
+        }
+
+        .loader-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .loader-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes dot-animation {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-5px);
+            }
+        }
+
+        /* Starter Question Buttons */
+        .starter-btn {
+            background: #e8f0fe;
+            color: #1a73e8;
+            border: 1px solid #c5d8f8;
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .starter-btn:hover {
+            background: #1a73e8;
+            color: white;
+            border-color: #1a73e8;
+        }
+
+        /* Markdown in chat bubbles */
+        .chat-bubble.assistant p {
+            margin: 0 0 8px 0;
+        }
+
+        .chat-bubble.assistant p:last-child {
+            margin-bottom: 0;
+        }
+
+        .chat-bubble.assistant strong {
+            font-weight: 600;
+        }
+
+        .chat-bubble.assistant ul,
+        .chat-bubble.assistant ol {
+            margin: 4px 0 8px 0;
+            padding-left: 18px;
+        }
+
+        .chat-bubble.assistant li {
+            margin-bottom: 3px;
+            line-height: 1.45;
+        }
+
+        .chat-bubble.assistant code {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+
+        .chat-bubble.assistant a {
+            color: #bfdbfe;
+            text-decoration: underline;
+        }
+
+        /* Styles for the new case study section */
+        .card-container {
+            height: 400px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            /* For Firefox */
+            scrollbar-color: #d1d5db #f3f4f6;
+            /* For Firefox */
+        }
+
+        .card-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .card-container::-webkit-scrollbar-track {
+            background: #f3f4f6;
+            border-radius: 10px;
+        }
+
+        .card-container::-webkit-scrollbar-thumb {
+            background-color: #d1d5db;
+            border-radius: 10px;
+            border: 2px solid #f3f4f6;
+        }
+
+        /* Mobile-specific styles */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            #music-toggle-container {
+                top: 0.5rem;
+                left: 0.5rem;
+            }
+
+            #music-toggle {
+                width: 2.5rem;
+                height: 2.5rem;
+                padding: 0.5rem;
+            }
+
+            #music-toggle svg {
+                width: 1.25rem;
+                height: 1.25rem;
+            }
+
+            .header-sticky {
+                padding: 1rem 0;
+            }
+
+            .header-sticky .flex {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .nav-link {
+                margin: 0.5rem 0;
+            }
+
+            .nav-link:first-of-type {
+                margin-top: 1rem;
+            }
+
+            .text-6xl {
+                font-size: 3rem;
+            }
+
+            .text-xl {
+                font-size: 1rem;
+            }
+
+            .metric-card {
+                padding: 1rem;
+            }
+
+            .text-5xl {
+                font-size: 2.5rem;
+            }
+
+            .case-study,
+            .contact-card {
+                padding: 1rem;
+            }
+
+            .case-study>div {
+                grid-template-columns: 1fr;
+            }
+
+            #chat-window {
+                width: 90vw;
+                height: 80vh;
+                max-width: none;
+                max-height: none;
+            }
+        }
+
+        /* Product Cards Animation */
+        .product-card {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .product-card:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .product-card:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .product-card:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .product-card:nth-child(4) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-900">
+
+    <!-- Sticky Navigation Bar -->
+    <nav class="header-sticky border-b border-gray-200">
+        <div class="container flex justify-between items-center py-4 relative">
+            <h1 class="text-2xl font-bold"><span class="text-gradient">Abhishek Singh</span></h1>
+            <button id="menu-button" class="md:hidden focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16">
+                    </path>
+                </svg>
+            </button>
+            <div id="nav-links"
+                class="hidden absolute top-full left-0 w-full bg-white shadow-md flex-col md:shadow-none md:bg-transparent md:static md:flex md:flex-row md:w-auto space-y-2 md:space-y-0 md:space-x-8 text-lg font-medium">
+                <a href="#homepage" class="nav-link px-4 py-2 md:px-0 md:py-0">Home</a>
+                <a href="#products" class="nav-link px-4 py-2 md:px-0 md:py-0">Products</a>
+                <a href="#case-studies" class="nav-link px-4 py-2 md:px-0 md:py-0">Case Studies</a>
+                <a href="#contact" class="nav-link px-4 py-2 md:px-0 md:py-0">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Homepage Section -->
+    <main id="homepage" class="section">
+        <div class="container text-center max-w-4xl">
+            <h2 class="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight mb-6">
+                Driving user-centric growth through data and empathy.
+            </h2>
+            <p class="text-lg md:text-xl font-light text-gray-500 mb-12">
+                As a results-driven product manager with over 5.1 years of experience in B2C e-commerce, fintech, and
+                AI, I thrive at the intersection of user needs and business goals. My passion lies in building
+                intuitive, high-impact products from concept to launch.
+            </p>
+
+            <!-- Metrics Section -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 my-16">
+                <div class="metric-card">
+                    <div class="text-4xl md:text-5xl font-bold text-gradient">16%</div>
+                    <p class="mt-2 text-xs md:text-sm text-gray-500">Reduction in support tickets</p>
+                </div>
+                <div class="metric-card">
+                    <div class="text-4xl md:text-5xl font-bold text-gradient">10%</div>
+                    <p class="mt-2 text-xs md:text-sm text-gray-500">Increase in search CTR</p>
+                </div>
+                <div class="metric-card">
+                    <div class="text-4xl md:text-5xl font-bold text-gradient">9%</div>
+                    <p class="mt-2 text-xs md:text-sm text-gray-500">Overall decrease in operational costs</p>
+                </div>
+                <div class="metric-card">
+                    <div class="text-4xl md:text-5xl font-bold text-gradient">10%</div>
+                    <p class="mt-2 text-xs md:text-sm text-gray-500">Increase in consumer electronics orders</p>
+                </div>
+            </div>
+
+            <!-- Philosophy Section -->
+            <div class="mt-12 md:mt-24">
+                <h3 class="text-3xl md:text-4xl font-semibold mb-4">My Product Philosophy</h3>
+                <p class="text-base md:text-lg font-light text-gray-500 leading-relaxed">
+                    Product management, to me, is about listening to the silent language of user behavior and
+                    translating it into a product that solves real-world challenges. It's the art of balancing user
+                    empathy with strategic business thinking. I love building things that make a difference, from
+                    helping users find what they need instantly to creating robust platforms that power cross-app
+                    experiences. It's this combination of user delight and business impact that fuels my passion.
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Products Section -->
+    <section id="products" class="section bg-white">
+        <div class="container">
+            <h2 class="text-4xl font-bold text-center mb-4">Products I've Built</h2>
+            <p class="text-center text-gray-500 mb-12 max-w-2xl mx-auto">Flagship products I've contributed to across
+                B2C, fintech, and AI — driving impact at scale for millions of users.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- MyJio App -->
+                <div
+                    class="product-card bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div
+                            class="w-14 h-14 rounded-xl shadow-lg overflow-hidden flex-shrink-0 bg-gradient-to-br from-blue-500 to-blue-700">
+                            <img src="https://drive.google.com/uc?export=view&id=1oIwBhvkT6LNUduWTJxQYoQvc3DZDHxYv"
+                                alt="MyJio App Logo" class="w-full h-full object-cover"
+                                onerror="this.style.display='none'">
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800">MyJio App</h3>
+                            <span
+                                class="text-xs font-medium text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">Live</span>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-4">India's leading telecom super app for managing Jio services,
+                        recharges & digital experiences.</p>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between bg-white/60 rounded-lg px-3 py-2">
+                            <span class="text-xs text-gray-500">Downloads</span>
+                            <span class="text-sm font-bold text-gray-800">500M+</span>
+                        </div>
+                        <div class="flex items-center justify-between bg-white/60 rounded-lg px-3 py-2">
+                            <span class="text-xs text-gray-500">App Rating</span>
+                            <div class="flex items-center gap-1">
+                                <span class="text-sm font-bold text-gray-800">4.3</span>
+                                <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                                    <path
+                                        d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- JioMart App -->
+                <div
+                    class="product-card bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div
+                            class="w-14 h-14 rounded-xl shadow-lg overflow-hidden flex-shrink-0 bg-gradient-to-br from-amber-400 to-orange-500">
+                            <img src="https://drive.google.com/uc?export=view&id=12ZXMysvhMx6-O2yq_k1omndNvxXCytv8"
+                                alt="JioMart App Logo" class="w-full h-full object-cover"
+                                onerror="this.style.display='none'">
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800">JioMart App</h3>
+                            <span
+                                class="text-xs font-medium text-green-600 bg-green-100 px-2 py-0.5 rounded-full">Live</span>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-4">India's fastest-growing e-commerce platform for groceries,
+                        electronics & daily essentials.</p>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between bg-white/60 rounded-lg px-3 py-2">
+                            <span class="text-xs text-gray-500">Downloads</span>
+                            <span class="text-sm font-bold text-gray-800">100M+</span>
+                        </div>
+                        <div class="flex items-center justify-between bg-white/60 rounded-lg px-3 py-2">
+                            <span class="text-xs text-gray-500">App Rating</span>
+                            <div class="flex items-center gap-1">
+                                <span class="text-sm font-bold text-gray-800">4.4</span>
+                                <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                                    <path
+                                        d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- JioFinance WMC -->
+                <div
+                    class="product-card bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6 border border-amber-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div
+                            class="w-14 h-14 rounded-xl shadow-lg overflow-hidden flex-shrink-0 bg-gradient-to-br from-slate-700 to-slate-900">
+                            <img src="https://drive.google.com/uc?export=view&id=1duElXC-krhdYbRTeByz2QqPCXFo4NnYj"
+                                alt="JioFinance App Logo" class="w-full h-full object-cover"
+                                onerror="this.style.display='none'">
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800">JioFinance WMC</h3>
+                            <span
+                                class="text-xs font-medium text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">Launching
+                                Soon</span>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-4">Wealth Management Console — AI-powered investment platform
+                        built with Jio & BlackRock.</p>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between bg-white/60 rounded-lg px-3 py-2">
+                            <span class="text-xs text-gray-500">Downloads</span>
+                            <span class="text-sm font-bold text-gray-800">—</span>
+                        </div>
+                        <div class="flex items-center justify-between bg-white/60 rounded-lg px-3 py-2">
+                            <span class="text-xs text-gray-500">App Rating</span>
+                            <div class="flex items-center gap-1">
+                                <span class="text-sm font-bold text-gray-800">—</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex items-center gap-2 text-xs text-amber-700">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>Expected Q1 2025</span>
+                    </div>
+                </div>
+
+                <!-- AI Smart Assistant -->
+                <div
+                    class="product-card bg-gradient-to-br from-purple-50 to-violet-50 rounded-2xl p-6 border border-purple-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div
+                            class="w-14 h-14 rounded-xl shadow-lg overflow-hidden flex-shrink-0 bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
+                                </path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800">AI Smart Assistant</h3>
+                            <span class="text-xs font-medium text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">In
+                                Development</span>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-4">Multimodal LLM-powered assistant for voice & text interactions
+                        across Jio ecosystem.</p>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between bg-white/60 rounded-lg px-3 py-2">
+                            <span class="text-xs text-gray-500">Downloads</span>
+                            <span class="text-sm font-bold text-gray-800">—</span>
+                        </div>
+                        <div class="flex items-center justify-between bg-white/60 rounded-lg px-3 py-2">
+                            <span class="text-xs text-gray-500">App Rating</span>
+                            <div class="flex items-center gap-1">
+                                <span class="text-sm font-bold text-gray-800">—</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex items-center gap-2 text-xs text-purple-700">
+                        <div class="flex items-center gap-1">
+                            <span class="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></span>
+                            <span>Work in Progress</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Case Studies Section -->
+    <section id="case-studies" class="section bg-white">
+        <div class="container">
+            <!-- Header -->
+            <h2 class="text-4xl font-bold text-gray-800 text-center mb-6">Product Case Studies</h2>
+            <p class="text-center text-gray-500 mb-6">Deep dives into products I've led — from discovery and insight to
+                shipping and measuring impact.</p>
+
+            <!-- Container for both cards -->
+            <div class="flex flex-col md:flex-row space-y-8 md:space-y-0 md:space-x-8">
+
+                <!-- Card 1: Fantasy Sports App -->
+                <div class="w-full md:w-1/2 bg-gray-50 p-6 rounded-2xl border border-gray-200 flex flex-col shadow-md">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4.25a.75.75 0 00.413.684l3.5 1.75a.75.75 0 00.674-1.348L11 9.49V6z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        Turning Rookies into Daily Players
+                    </h2>
+                    <div class="card-container text-gray-600 space-y-4">
+                        <p class="text-sm leading-relaxed">
+                            <strong>The Insight:</strong> While analyzing cohort data for a fantasy sports product, I
+                            noticed a brutal pattern — <strong>95% of new users churned before Day 30</strong>. The
+                            industry was pouring money into acquisition, but the real lever was retention. I dug deeper
+                            through user interviews and session replays and uncovered three core anxieties killing
+                            first-time engagement: <strong>choice overload</strong> (too many options, no guidance),
+                            <strong>fear of losing money</strong> (real-money contests on Day 1), and <strong>lack of
+                                domain knowledge</strong> (users felt they weren't "expert enough" to play).
+                        </p>
+                        <p class="text-sm leading-relaxed">
+                            <strong>My Approach:</strong> I reframed the product strategy from "compete on prize pools"
+                            to <strong>"build confidence before asking for commitment."</strong> I designed a
+                            three-pillar intervention targeting each anxiety:
+                        </p>
+                        <ul class="list-disc list-inside text-sm leading-relaxed space-y-1 ml-4">
+                            <li><strong>Smart-Start Onboarding:</strong> I introduced a guided, risk-free first contest
+                                — auto-drafted teams with simple choices so new users could experience the thrill of
+                                playing without the paralysis of building a team from scratch.</li>
+                            <li><strong>AI-Powered Coach:</strong> I specced and drove development of an in-app coach
+                                that surfaced data-driven player recommendations. This eliminated the "I don't know
+                                enough" barrier and gave users confidence in their picks.</li>
+                            <li><strong>Progression Engine:</strong> I designed a daily missions and streak system to
+                                create a habit loop — giving users a reason to return even on non-match days, which was
+                                critical for long-term retention.</li>
+                        </ul>
+                        <p class="text-sm leading-relaxed">
+                            <strong>The Outcome:</strong> By tackling the root causes of churn instead of papering over
+                            them with discounts, I was able to fundamentally shift the product's retention curve. The
+                            approach outperformed industry benchmarks and validated a key thesis: <strong>reducing user
+                                anxiety is a higher-leverage growth strategy than increasing prize incentives.</strong>
+                        </p>
+                        <div class="bg-gray-100 p-4 rounded-xl mt-4">
+                            <h3 class="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m-6 0h6">
+                                    </path>
+                                </svg>
+                                Retention Targets vs. Industry Benchmarks:
+                            </h3>
+                            <table class="w-full text-sm text-left text-gray-600">
+                                <thead>
+                                    <tr class="border-b border-gray-300">
+                                        <th class="py-2">Metric</th>
+                                        <th class="py-2">Industry Avg.</th>
+                                        <th class="py-2">Our Result</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="py-2">Day-1 Retention</td>
+                                        <td class="py-2">32%</td>
+                                        <td class="py-2 font-semibold text-green-600">45%</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-2">Day-30 Retention</td>
+                                        <td class="py-2">7%</td>
+                                        <td class="py-2 font-semibold text-green-600">12%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <a href="https://docs.google.com/presentation/d/1neDuNyTigXJ9UhwxSCSe_uWEqKvBhPPIEeDJu02iTOw/edit?usp=sharing"
+                            target="_blank"
+                            class="inline-block px-6 py-2 bg-blue-600 text-white rounded-full font-semibold text-sm hover:bg-blue-700 transition-colors duration-200">
+                            View Full Case Study
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Card 2: Strava Personalized Training Plan -->
+                <div class="w-full md:w-1/2 bg-gray-50 p-6 rounded-2xl border border-gray-200 flex flex-col shadow-md">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                        Personalized Training for Every Athlete
+                    </h2>
+                    <div class="card-container text-gray-600 space-y-4">
+                        <p class="text-sm leading-relaxed">
+                            <strong>The Insight:</strong> I studied Strava's engagement data and noticed a clear pattern
+                            — users training for endurance goals (marathons, century rides, triathlons) were Strava's
+                            highest-value segment, but the platform offered them no structured path to their goal. They
+                            logged activities religiously, yet had to rely on external apps or generic plans for actual
+                            training guidance. This was a <strong>retention risk</strong>: power users were splitting
+                            their workflow across competitors that offered structured plans.
+                        </p>
+                        <p class="text-sm leading-relaxed">
+                            <strong>My Approach:</strong> I identified an opportunity to turn Strava's biggest data
+                            asset — years of individual activity history — into a personalized training engine. The core
+                            hypothesis: <strong>if we can generate adaptive plans rooted in a user's own performance
+                                data, we can capture the full training workflow and deepen platform lock-in.</strong> I
+                            mapped out the product strategy across three pillars:
+                        </p>
+                        <div class="bg-gray-100 p-4 rounded-xl mt-4">
+                            <h3 class="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                                Product Design Decisions:
+                            </h3>
+                            <ul class="list-disc list-inside text-sm leading-relaxed space-y-1 ml-4">
+                                <li><strong>Goal-Based Adaptive Plans:</strong> I designed the system to generate plans
+                                    calibrated to a user's current fitness level — whether they're training for a first
+                                    5K or a sub-3:30 marathon. Plans adjust weekly based on actual performance vs.
+                                    targets.</li>
+                                <li><strong>Cross-Sport Integration:</strong> Rather than treating running, cycling, and
+                                    strength as siloed activities, I pushed for a holistic model that accounts for
+                                    cross-training load — a key differentiator over single-sport competitors like
+                                    TrainingPeaks.</li>
+                                <li><strong>AI-Powered Coaching Layer:</strong> I scoped an intelligent coaching surface
+                                    that flags overtraining risks, suggests recovery windows, and recommends workout
+                                    swaps — turning raw data into actionable guidance users could trust.</li>
+                            </ul>
+                        </div>
+                        <p class="text-sm leading-relaxed">
+                            <strong>The Outcome:</strong> This feature closed a critical gap in Strava's product
+                            offering by transforming passive activity logging into active training guidance. It
+                            strengthened the case for Strava Premium by giving subscribers a tangible, personalized
+                            reason to stay — directly improving <strong>subscriber retention</strong> and <strong>plan
+                                completion rates</strong>.
+                        </p>
+                        <div class="bg-gray-100 p-4 rounded-xl mt-2">
+                            <h3 class="font-semibold text-gray-700 mb-2 text-sm">📊 Success Metrics I Defined:</h3>
+                            <ul class="list-disc list-inside text-sm leading-relaxed space-y-1 ml-4">
+                                <li><strong>Adoption Rate:</strong> % of eligible users who start a training plan within
+                                    30 days of launch</li>
+                                <li><strong>Completion Rate:</strong> % of users who finish their plan vs. abandon
+                                    mid-way</li>
+                                <li><strong>Performance Uplift:</strong> Measurable pace/power improvement across plan
+                                    participants</li>
+                                <li><strong>Retention Lift:</strong> Premium subscriber churn reduction among plan users
+                                    vs. control</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <a href="https://drive.google.com/file/d/184GKqJY6_g6e3eh4IimwedJtvhp6vWv6/view?usp=sharing"
+                            target="_blank"
+                            class="inline-block px-6 py-2 bg-blue-600 text-white rounded-full font-semibold text-sm hover:bg-blue-700 transition-colors duration-200">
+                            View Full Case Study
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="section bg-gray-50">
+        <div class="container max-w-2xl text-center">
+            <div class="contact-card">
+                <h2 class="text-4xl md:text-5xl font-bold mb-4">Get in Touch</h2>
+                <p class="text-base md:text-lg text-gray-500 mb-8">
+                    Let's connect and discuss how I can help your team build the next great product.
+                </p>
+                <div class="space-y-4 mb-8">
+                    <p class="text-lg font-medium">Abhishek Singh</p>
+                    <p class="text-lg font-medium"><a href="mailto:abhisheksingh9g@gmail.com"
+                            class="text-blue-600 hover:underline">abhisheksingh9g@gmail.com</a></p>
+                    <p class="text-lg font-medium"><a href="tel:+918425877338" class="text-blue-600 hover:underline">+91
+                            8425877338</a></p>
+                    <p class="text-lg text-gray-500">Navi Mumbai, MH</p>
+                </div>
+                <div class="flex justify-center space-x-6 mb-8">
+                    <!-- LinkedIn -->
+                    <a href="https://www.linkedin.com/in/abhishek-singh2501" target="_blank" rel="noopener noreferrer"
+                        class="social-link">
+                        <svg class="w-8 h-8 text-gray-400 hover:text-blue-700" fill="currentColor" viewBox="0 0 24 24"
+                            aria-hidden="true">
+                            <path
+                                d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.763s.784-1.763 1.75-1.763 1.75.79 1.75 1.763-.783 1.763-1.75 1.763zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+                        </svg>
+                    </a>
+                    <!-- GitHub -->
+                    <a href="https://github.com/abyssingh" target="_blank" rel="noopener noreferrer"
+                        class="social-link">
+                        <svg class="w-8 h-8 text-gray-400 hover:text-gray-700" fill="currentColor" viewBox="0 0 24 24"
+                            aria-hidden="true">
+                            <path fill-rule="evenodd"
+                                d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.73.083-.73 1.205.084 1.839 1.237 1.839 1.237 1.07 1.836 2.809 1.305 3.493.998.108-.776.417-1.305.761-1.605-2.665-.304-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.046.138 3.003.404 2.292-1.552 3.3-1.23 3.3-1.23.653 1.653.242 2.874.118 3.176.766.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </a>
+                </div>
+                <a href="https://drive.google.com/file/d/1UxEvuJcP4jp53CgeUulwFU0wB2zTH8Rg/view?usp=sharing"
+                    target="_blank"
+                    class="inline-block mt-2 px-6 py-2 bg-gray-900 text-white rounded-full font-semibold text-sm hover:bg-blue-600 transition-colors duration-200">
+                    Download My Resume
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-6 md:py-12 bg-gray-100 text-center text-gray-400 text-sm">
+        <p>&copy; 2024 Abhishek Singh. All rights reserved.</p>
+    </footer>
+
+    <!-- Background Music -->
+    <audio id="background-music" loop preload="auto">
+        <source src="interstellar_chase_2.mp3" type="audio/mpeg">
+        <!-- You can add your own music file here -->
+        <!-- <source src="your-music-file.mp3" type="audio/mpeg"> -->
+    </audio>
+
+    <!-- Music Toggle Button -->
+    <div id="music-toggle-container">
+        <button id="music-toggle" aria-label="Toggle background music">
+            <svg id="music-icon" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            </svg>
+            <svg id="music-muted-icon" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 hidden" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                <line x1="23" y1="9" x2="17" y2="15"></line>
+                <line x1="17" y1="9" x2="23" y2="15"></line>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Floating Chat Assistant -->
+    <div id="chat-container">
+        <!-- Floating Button -->
+        <button id="chat-button">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+        </button>
+
+        <!-- Chat Window -->
+        <div id="chat-window">
+            <div id="chat-header">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <h4 class="text-xl font-semibold">Ask Abhishek</h4>
+                    <span id="chat-status-dot"
+                        style="width:8px;height:8px;border-radius:50%;background:#4ade80;display:inline-block;"></span>
+                </div>
+                <button id="chat-close-btn">&times;</button>
+            </div>
+            <div id="chat-messages">
+                <!-- Chat messages will be appended here -->
+                <div class="chat-bubble assistant">Hi! I'm Abhishek's AI assistant. Ask me anything about his
+                    experience, projects, skills, or GitHub activity.</div>
+                <div id="starter-questions" style="display:flex;flex-wrap:wrap;gap:6px;padding:4px 0;">
+                    <button class="starter-btn" data-q="What is Abhishek's experience?">💼 Experience</button>
+                    <button class="starter-btn" data-q="Tell me about his projects and case studies">📂
+                        Projects</button>
+                    <button class="starter-btn" data-q="What tools and skills does he have?">🛠️ Skills & Tools</button>
+                    <button class="starter-btn" data-q="How can I contact Abhishek?">📧 Contact</button>
+                </div>
+            </div>
+            <form id="chat-input-form">
+                <input type="text" id="chat-input" placeholder="Ask about experience, projects, skills..."
+                    class="w-full rounded-full border px-4 py-2" autocomplete="off">
+                <button type="submit" id="chat-submit-btn" class="px-6 py-2 rounded-full font-semibold">Send</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Music functionality
+            const backgroundMusic = document.getElementById('background-music');
+            const musicToggle = document.getElementById('music-toggle');
+            const musicIcon = document.getElementById('music-icon');
+            const musicMutedIcon = document.getElementById('music-muted-icon');
+            let isPlaying = false;
+
+            // Function to toggle music
+            const toggleMusic = () => {
+                if (isPlaying) {
+                    backgroundMusic.pause();
+                    musicToggle.classList.add('muted');
+                    musicIcon.classList.add('hidden');
+                    musicMutedIcon.classList.remove('hidden');
+                    sessionStorage.setItem('musicMuted', 'true');
+                } else {
+                    backgroundMusic.play().catch(e => {
+                        console.log('Audio play failed:', e);
+                        // If autoplay fails, we'll handle it gracefully
+                    });
+                    musicToggle.classList.remove('muted');
+                    musicIcon.classList.remove('hidden');
+                    musicMutedIcon.classList.add('hidden');
+                    sessionStorage.setItem('musicMuted', 'false');
+                }
+                isPlaying = !isPlaying;
+            };
+
+            // Initialize music state
+            const initializeMusic = () => {
+                // Use sessionStorage instead of localStorage to only persist within session
+                const musicMuted = sessionStorage.getItem('musicMuted');
+
+                // Always try to autoplay on fresh load, only respect muted state within same session
+                if (musicMuted !== 'true') {
+                    // Try multiple approaches for autoplay
+                    const attemptAutoplay = () => {
+                        backgroundMusic.play().then(() => {
+                            isPlaying = true;
+                            musicToggle.classList.remove('muted');
+                            musicIcon.classList.remove('hidden');
+                            musicMutedIcon.classList.add('hidden');
+                        }).catch(e => {
+                            console.log('Autoplay blocked, will try on user interaction:', e);
+                            // Show playing state but music won't start until user interaction
+                            isPlaying = false;
+                            musicToggle.classList.remove('muted');
+                            musicIcon.classList.remove('hidden');
+                            musicMutedIcon.classList.add('hidden');
+                        });
+                    };
+
+                    // Try immediate autoplay
+                    attemptAutoplay();
+
+                    // Also try after a short delay
+                    setTimeout(attemptAutoplay, 100);
+                } else {
+                    // Music was muted in this session
+                    isPlaying = false;
+                    musicToggle.classList.add('muted');
+                    musicIcon.classList.add('hidden');
+                    musicMutedIcon.classList.remove('hidden');
+                }
+            };
+
+            // Event listeners
+            musicToggle.addEventListener('click', toggleMusic);
+
+            // Handle audio events
+            backgroundMusic.addEventListener('play', () => {
+                isPlaying = true;
+            });
+
+            backgroundMusic.addEventListener('pause', () => {
+                isPlaying = false;
+            });
+
+            // Initialize music when page loads
+            initializeMusic();
+
+            // Handle user interaction to enable autoplay (fallback)
+            const enableAutoplayOnInteraction = () => {
+                if (!isPlaying && sessionStorage.getItem('musicMuted') !== 'true') {
+                    backgroundMusic.play().then(() => {
+                        isPlaying = true;
+                        musicToggle.classList.remove('muted');
+                        musicIcon.classList.remove('hidden');
+                        musicMutedIcon.classList.add('hidden');
+                    }).catch(e => {
+                        console.log('Audio play failed even after user interaction:', e);
+                    });
+                }
+                // Remove the event listeners after first interaction
+                document.removeEventListener('click', enableAutoplayOnInteraction);
+                document.removeEventListener('keydown', enableAutoplayOnInteraction);
+                document.removeEventListener('touchstart', enableAutoplayOnInteraction);
+            };
+
+            // Add event listeners for user interaction (fallback for autoplay restrictions)
+            document.addEventListener('click', enableAutoplayOnInteraction);
+            document.addEventListener('keydown', enableAutoplayOnInteraction);
+            document.addEventListener('touchstart', enableAutoplayOnInteraction);
+
+        });
+    </script>
+
+    <!-- JavaScript for the Chat Assistant — Groq RAG Engine -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Mobile Nav Toggle ---
+            const menuButton = document.getElementById('menu-button');
+            const navLinks = document.getElementById('nav-links');
+            if (menuButton && navLinks) {
+                menuButton.addEventListener('click', () => navLinks.classList.toggle('hidden'));
+            }
+
+            // --- Configuration ---
+            // SECURITY: API key is NOT stored here. It lives in the Cloudflare Worker.
+            // Deploy the worker from /api-proxy/worker.js and set the URL below.
+            const PROXY_URL = 'https://ask-abhishek-proxy.abhisheksingh9g.workers.dev';
+            const GROQ_MODEL = 'llama-3.3-70b-versatile';
+            const GITHUB_USER = 'abyssingh';
+            const GITHUB_REPO = 'abhishek-portfolio';
+            const KNOWLEDGE_FOLDER = 'knowledge';
+
+            // --- Client-side rate limiting ---
+            const CLIENT_RATE_LIMIT = 10; // max requests per minute
+            let requestTimestamps = [];
+
+            // --- DOM Elements ---
+            const chatButton = document.getElementById('chat-button');
+            const chatWindow = document.getElementById('chat-window');
+            const chatCloseBtn = document.getElementById('chat-close-btn');
+            const chatMessages = document.getElementById('chat-messages');
+            const chatForm = document.getElementById('chat-input-form');
+            const chatInput = document.getElementById('chat-input');
+            const starterQuestions = document.getElementById('starter-questions');
+            let isChatOpen = false;
+
+            // --- State ---
+            let knowledgeChunks = []; // Array of { filename, content }
+            let conversationHistory = []; // Array of { role, content }
+            let knowledgeLoaded = false;
+
+            // ================================================
+            // 1. GITHUB KNOWLEDGE FETCHER
+            // ================================================
+            // Known knowledge files to fetch
+            const KNOWLEDGE_FILES = ['resume.md', 'case-studies.md', 'products.md', 'contact.md'];
+
+            async function fetchKnowledge() {
+                // Check sessionStorage cache first
+                const cached = sessionStorage.getItem('askAbhishek_knowledge');
+                if (cached) {
+                    knowledgeChunks = JSON.parse(cached);
+                    knowledgeLoaded = true;
+                    console.log(`[RAG] Loaded ${knowledgeChunks.length} knowledge chunks from cache`);
+                    return;
+                }
+
+                // Strategy: Try local /knowledge/ path first, then GitHub API, then fallback
+                let fetched = false;
+
+                // 1. Try local path (works on local server and GitHub Pages)
+                try {
+                    const localPromises = KNOWLEDGE_FILES.map(async (filename) => {
+                        const res = await fetch(`/${KNOWLEDGE_FOLDER}/${filename}`);
+                        if (!res.ok) throw new Error(`Local: ${res.status}`);
+                        const content = await res.text();
+                        return { filename, content };
+                    });
+                    knowledgeChunks = await Promise.all(localPromises);
+                    fetched = true;
+                    console.log(`[RAG] Fetched ${knowledgeChunks.length} knowledge files from local path`);
+                } catch (localErr) {
+                    console.log('[RAG] Local fetch failed, trying GitHub API...', localErr.message);
+                }
+
+                // 2. Fallback: Try GitHub API
+                if (!fetched) {
+                    try {
+                        const listUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${KNOWLEDGE_FOLDER}`;
+                        const listRes = await fetch(listUrl);
+                        if (!listRes.ok) throw new Error(`GitHub API: ${listRes.status}`);
+                        const files = await listRes.json();
+                        const mdFiles = files.filter(f => f.name.endsWith('.md'));
+
+                        const fetchPromises = mdFiles.map(async (file) => {
+                            const contentRes = await fetch(file.download_url);
+                            const content = await contentRes.text();
+                            return { filename: file.name, content };
+                        });
+
+                        knowledgeChunks = await Promise.all(fetchPromises);
+                        fetched = true;
+                        console.log(`[RAG] Fetched ${knowledgeChunks.length} knowledge files from GitHub`);
+                    } catch (ghErr) {
+                        console.error('[RAG] GitHub fetch also failed:', ghErr.message);
+                    }
+                }
+
+                // 3. Last resort fallback
+                if (!fetched) {
+                    knowledgeChunks = [{
+                        filename: 'fallback',
+                        content: document.querySelector('main')?.innerText || 'Abhishek Singh is a Product Manager with 5+ years of experience at Jio Platforms.'
+                    }];
+                }
+
+                knowledgeLoaded = true;
+                sessionStorage.setItem('askAbhishek_knowledge', JSON.stringify(knowledgeChunks));
+            }
+
+            // ================================================
+            // 2. RETRIEVAL ENGINE (Keyword Matching)
+            // ================================================
+            function retrieveContext(query) {
+                if (!knowledgeChunks.length) return '';
+
+                const queryWords = query.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+                const stopWords = new Set(['the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her', 'was', 'one', 'our', 'out', 'has', 'his', 'how', 'its', 'may', 'new', 'now', 'old', 'see', 'way', 'who', 'did', 'get', 'let', 'say', 'she', 'too', 'use', 'what', 'when', 'where', 'which', 'will', 'with', 'about', 'could', 'would', 'should', 'there', 'their', 'these', 'those', 'being', 'after', 'again', 'below', 'between', 'does', 'from', 'have', 'here', 'into', 'just', 'like', 'make', 'many', 'most', 'much', 'must', 'over', 'some', 'such', 'than', 'that', 'them', 'then', 'they', 'this', 'very', 'were', 'your']);
+                const keywords = queryWords.filter(w => !stopWords.has(w));
+
+                // Score each chunk by keyword overlap
+                const scored = knowledgeChunks.map(chunk => {
+                    const lower = chunk.content.toLowerCase();
+                    let score = 0;
+                    for (const kw of keywords) {
+                        const regex = new RegExp(kw, 'gi');
+                        const matches = lower.match(regex);
+                        if (matches) score += matches.length;
+                    }
+                    return { ...chunk, score };
+                });
+
+                // Sort by score, take top chunks that fit in context
+                scored.sort((a, b) => b.score - a.score);
+                const topChunks = scored.filter(c => c.score > 0);
+
+                // If no keyword matches, return all knowledge (small corpus)
+                if (topChunks.length === 0) {
+                    return knowledgeChunks.map(c => `--- ${c.filename} ---\n${c.content}`).join('\n\n');
+                }
+
+                return topChunks.map(c => `--- ${c.filename} ---\n${c.content}`).join('\n\n');
+            }
+
+            // ================================================
+            // 3. GROQ API CALL
+            // ================================================
+            async function callGroq(userMessage) {
+                if (!PROXY_URL) {
+                    return "⚠️ The AI assistant is not configured yet. The site owner needs to deploy the API proxy. In the meantime, feel free to explore the portfolio or reach out to Abhishek directly at abhisheksingh9g@gmail.com";
+                }
+
+                // Client-side rate limiting
+                const now = Date.now();
+                requestTimestamps = requestTimestamps.filter(t => now - t < 60000);
+                if (requestTimestamps.length >= CLIENT_RATE_LIMIT) {
+                    return "You're asking questions really fast! Please wait a moment before trying again.";
+                }
+                requestTimestamps.push(now);
+
+                // Retrieve relevant context
+                const context = retrieveContext(userMessage);
+
+                // Build system prompt
+                const systemPrompt = `You are "Ask Abhishek" — a professional AI assistant on Abhishek Singh's portfolio website. Your job is to help HR recruiters, hiring managers, and visitors learn about Abhishek's professional background.
+
+RULES:
+- Answer ONLY based on the provided context below. Never make up information.
+- Speak in third person about Abhishek (e.g., "Abhishek has..." not "I have...")
+- Be concise, professional, and warm. Use bullet points and bold text for readability.
+- If a question cannot be answered from the context, say so honestly and suggest contacting Abhishek directly.
+- For contact inquiries, always provide: abhisheksingh9g@gmail.com | +91 8425877338 | LinkedIn: linkedin.com/in/abhishek-singh2501
+- Keep responses under 200 words unless the user asks for detail.
+
+CONTEXT:
+${context}`;
+
+                // Build messages array with conversation history
+                const messages = [
+                    { role: 'system', content: systemPrompt },
+                    ...conversationHistory.slice(-10),
+                    { role: 'user', content: userMessage }
+                ];
+
+                try {
+                    const response = await fetch(PROXY_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            model: GROQ_MODEL,
+                            messages: messages,
+                            temperature: 0.3,
+                            max_tokens: 512
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errData = await response.json().catch(() => ({}));
+                        if (response.status === 429) {
+                            return "I'm getting a lot of questions right now. Please try again in a moment!";
+                        }
+                        throw new Error(errData.error?.message || `API error: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    return data.choices?.[0]?.message?.content || "Sorry, I couldn't generate a response.";
+                } catch (err) {
+                    console.error('[RAG] API error:', err);
+                    return "I'm having trouble connecting right now. Please try again in a moment, or reach out to Abhishek directly at abhisheksingh9g@gmail.com";
+                }
+            }
+
+            // ================================================
+            // 4. MARKDOWN RENDERER (Lightweight)
+            // ================================================
+            function renderMarkdown(text) {
+                return text
+                    // Bold: **text**
+                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                    // Italic: *text*
+                    .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>')
+                    // Inline code: `code`
+                    .replace(/`(.+?)`/g, '<code>$1</code>')
+                    // Links: [text](url)
+                    .replace(/\[(.+?)\]\((https?:\/\/.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+                    // Unordered lists: - item or * item
+                    .replace(/^[\-\*]\s+(.+)$/gm, '<li>$1</li>')
+                    // Wrap consecutive <li> in <ul>
+                    .replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>')
+                    // Numbered lists: 1. item
+                    .replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>')
+                    // Paragraphs: double newline
+                    .replace(/\n\n/g, '</p><p>')
+                    // Single newlines within text
+                    .replace(/\n/g, '<br>')
+                    // Wrap in paragraph
+                    .replace(/^/, '<p>').replace(/$/, '</p>')
+                    // Clean up empty paragraphs
+                    .replace(/<p><\/p>/g, '')
+                    .replace(/<p><br><\/p>/g, '');
+            }
+
+            // ================================================
+            // 5. CHAT UI FUNCTIONS
+            // ================================================
+
+            // Append a message to the chat
+            function appendMessage(content, sender) {
+                const el = document.createElement('div');
+                el.classList.add('chat-bubble', sender);
+                if (sender === 'assistant') {
+                    el.innerHTML = renderMarkdown(content);
+                } else {
+                    el.textContent = content;
+                }
+                chatMessages.appendChild(el);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            // Show typing indicator
+            function showLoader() {
+                const el = document.createElement('div');
+                el.id = 'loader-assistant';
+                el.classList.add('chat-bubble', 'assistant', 'loader-dots');
+                el.innerHTML = `<span></span><span></span><span></span>`;
+                chatMessages.appendChild(el);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            // Hide typing indicator
+            function hideLoader() {
+                const el = document.getElementById('loader-assistant');
+                if (el) el.remove();
+            }
+
+            // Hide starter questions after first use
+            function hideStarters() {
+                if (starterQuestions) starterQuestions.style.display = 'none';
+            }
+
+            // ================================================
+            // 6. EVENT HANDLERS
+            // ================================================
+
+            // Toggle chat window
+            chatButton.addEventListener('click', async () => {
+                isChatOpen = !isChatOpen;
+                chatWindow.classList.toggle('open', isChatOpen);
+                if (isChatOpen) {
+                    chatWindow.style.display = 'flex';
+                    // Fetch knowledge on first open
+                    if (!knowledgeLoaded) await fetchKnowledge();
+                } else {
+                    setTimeout(() => chatWindow.style.display = 'none', 300);
+                }
+            });
+
+            chatCloseBtn.addEventListener('click', () => {
+                isChatOpen = false;
+                chatWindow.classList.remove('open');
+                setTimeout(() => chatWindow.style.display = 'none', 300);
+            });
+
+            // Handle starter question clicks
+            if (starterQuestions) {
+                starterQuestions.addEventListener('click', (e) => {
+                    const btn = e.target.closest('.starter-btn');
+                    if (!btn) return;
+                    const question = btn.getAttribute('data-q');
+                    if (question) handleUserMessage(question);
+                });
+            }
+
+            // Handle form submission
+            chatForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const msg = chatInput.value.trim();
+                if (!msg) return;
+                chatInput.value = '';
+                handleUserMessage(msg);
+            });
+
+            // Main message handler
+            async function handleUserMessage(message) {
+                hideStarters();
+                appendMessage(message, 'user');
+                showLoader();
+
+                // Ensure knowledge is loaded
+                if (!knowledgeLoaded) await fetchKnowledge();
+
+                // Call Groq
+                const response = await callGroq(message);
+
+                hideLoader();
+                appendMessage(response, 'assistant');
+
+                // Update conversation history
+                conversationHistory.push({ role: 'user', content: message });
+                conversationHistory.push({ role: 'assistant', content: response });
+
+                // Keep only last 10 exchanges
+                if (conversationHistory.length > 20) {
+                    conversationHistory = conversationHistory.slice(-20);
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
