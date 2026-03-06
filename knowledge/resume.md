@@ -26,8 +26,12 @@ Experienced in **AI evaluation, observability, and rapid prototyping** to improv
 
 ### Jio AI Smart Assistant, JioInvest, JioMart
 
-- Spearheading **0→1 app experience for an AI Smart Assistant**, owning roadmap, strategy, and UX across productivity and shopping use cases with voice-based conversational flows and evaluation-driven improvements.
-  
+- Spearheading **0→1 app experience for an Agentic AI Smart Assistant** targeted at the "Bharat" demographic (Tier 2 & 3 cities).
+  - Designing a system that moves from simple conversational Q&A to autonomous **completions and workflow executions**.
+  - Leading the complete end-to-end core user journey, including homepage onboarding, interaction flows, and utility executions.
+  - Designing multi-agent system architectures capable of handling complex tasks to save user time and solve real-world pain points.
+  - Driving specialized product streams including **Voice Experience**, **Chat Experience**, and rigorous **LLM Model Evaluations**.
+
 - Led development of **multilingual conversational AI onboarding** for the **JioBlackrock Wealth Management app**, reducing onboarding time **18%** and increasing first-attempt completion **25%** versus traditional flows.
 
 - Built a **foundational SSO / Identity platform** integrated into JioMart enabling:

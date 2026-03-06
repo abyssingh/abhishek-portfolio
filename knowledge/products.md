@@ -19,7 +19,13 @@ AI-powered investment platform built as a partnership between Jio and BlackRock.
 - **Status**: Launching Soon (Expected Q1 2025)
 - **Abhishek's Role**: Led end-to-end product development, creating seamless onboarding experiences with AI-powered voice interactions
 
-## AI Smart Assistant
-Multimodal LLM-powered assistant for voice and text interactions across the Jio ecosystem.
+## Agentic AI Smart Assistant
+A next-generation multimodal LLM-powered assistant designed for the "Bharat" demographic (Tier 2 & Tier 3 cities in India). This platform evolves AI from simple Q&A to an agentic system focused on task completion.
 - **Status**: In Development (Work in Progress)
-- **Abhishek's Role**: Driving development, defining MVP, USPs, and success metrics. Partnering with AI/ML teams to embed multimodal LLMs.
+- **Goal**: Move from *conversations to completions*. Build multi-agent systems that autonomously execute complex utility workflows, solving real user pain points to save time and increase productivity.
+- **Abhishek's Role**: Lead Product Manager for the end-to-end core experience.
+- **Key Responsibilities**:
+  - Directing the complete user journey from homepage onboarding to deep interaction and utility execution flows.
+  - Defining user pain points, structuring logic, and writing features.
+  - Partnering intimately with UX/UI design teams to craft intuitive, accessible interfaces for the next billion users.
+  - Managing multiple product streams including Voice Experience, Chat/Text Experience, and comprehensive LLM Model Evaluations.
