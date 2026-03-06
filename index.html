@@ -7,6 +7,7 @@
     <title>Abhishek Singh | Product Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -1169,34 +1170,14 @@ ${context}`;
             }
 
             // ================================================
-            // 4. MARKDOWN RENDERER (Lightweight)
+            // 4. MARKDOWN RENDERER (Using Marked.js)
             // ================================================
-            function renderMarkdown(text) {
-                return text
-                    // Bold: **text**
-                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                    // Italic: *text*
-                    .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>')
-                    // Inline code: `code`
-                    .replace(/`(.+?)`/g, '<code>$1</code>')
-                    // Links: [text](url)
-                    .replace(/\[(.+?)\]\((https?:\/\/.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
-                    // Unordered lists: - item or * item
-                    .replace(/^[\-\*]\s+(.+)$/gm, '<li>$1</li>')
-                    // Wrap consecutive <li> in <ul>
-                    .replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>')
-                    // Numbered lists: 1. item
-                    .replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>')
-                    // Paragraphs: double newline
-                    .replace(/\n\n/g, '</p><p>')
-                    // Single newlines within text
-                    .replace(/\n/g, '<br>')
-                    // Wrap in paragraph
-                    .replace(/^/, '<p>').replace(/$/, '</p>')
-                    // Clean up empty paragraphs
-                    .replace(/<p><\/p>/g, '')
-                    .replace(/<p><br><\/p>/g, '');
-            }
+            // We use marked.parse() directly in the appendMessage function.
+            // Configuring marked for safer HTML
+            marked.setOptions({
+                breaks: true, // Convert \n to <br> for standard text
+                gfm: true
+            });
 
             // ================================================
             // 5. CHAT UI FUNCTIONS
@@ -1207,7 +1188,7 @@ ${context}`;
                 const el = document.createElement('div');
                 el.classList.add('chat-bubble', sender);
                 if (sender === 'assistant') {
-                    el.innerHTML = renderMarkdown(content);
+                    el.innerHTML = marked.parse(content);
                 } else {
                     el.textContent = content;
                 }
