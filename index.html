@@ -108,7 +108,71 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
+            animation: pulse-glow 2s infinite;
         }
+
+        @keyframes pulse-glow {
+            0% {
+                box-shadow: 0 0 0 0 rgba(0, 122, 255, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(0, 122, 255, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(0, 122, 255, 0);
+            }
+        }
+
+        /* Tooltip Nudge */
+        .chat-nudge {
+            position: absolute;
+            bottom: calc(100% + 15px);
+            right: 0;
+            background-color: #1d1d1f;
+            color: #ffffff;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: float-nudge 3s ease-in-out infinite;
+            pointer-events: none;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Triangle pointer for tooltip */
+        .chat-nudge::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            right: 20px;
+            border-width: 6px;
+            border-style: solid;
+            border-color: #1d1d1f transparent transparent transparent;
+        }
+
+        @keyframes float-nudge {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-5px);
+            }
+        }
+
+        /* Hide nudge when chat opens */
+        #chat-container.chat-active .chat-nudge {
+            opacity: 0;
+        }
+
 
         #chat-button:hover {
             transform: scale(1.1);
@@ -916,7 +980,8 @@
     <!-- Floating Chat Assistant -->
     <div id="chat-container">
         <!-- Floating Button -->
-        <button id="chat-button">
+        <button id="chat-button" aria-label="Open AI Assistant Chat">
+            <div class="chat-nudge">✨ Chat with my AI</div>
             <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
@@ -941,7 +1006,8 @@
                     <button class="starter-btn" data-q="What is Abhishek's experience?">💼 Experience</button>
                     <button class="starter-btn" data-q="Tell me about his projects and case studies">📂
                         Projects</button>
-                    <button class="starter-btn" data-q="What tools and skills does he have?">🛠️ Skills & Tools</button>
+                    <button class="starter-btn" data-q="What tools and skills does he have?">🛠️ Skills &
+                        Tools</button>
                     <button class="starter-btn" data-q="How can I contact Abhishek?">📧 Contact</button>
                 </div>
             </div>
@@ -1225,6 +1291,8 @@ ${context}`;
             chatButton.addEventListener('click', async () => {
                 isChatOpen = !isChatOpen;
                 chatWindow.classList.toggle('open', isChatOpen);
+                document.getElementById('chat-container').classList.toggle('chat-active', isChatOpen);
+
                 if (isChatOpen) {
                     chatWindow.style.display = 'flex';
                     // Fetch knowledge on first open
