@@ -145,14 +145,17 @@ export default {
 
             const data = await groqResponse.text();
 
+            // --- Output sanitization: catch leaked prompt fragments ---
+            const sanitizedData = sanitizeResponse(data);
+
             // --- Langfuse observability (background, non-blocking) ---
             if (env.LANGFUSE_PUBLIC_KEY && env.LANGFUSE_SECRET_KEY) {
                 ctx.waitUntil(
-                    logToLangfuse(env, ip, model, body.messages, data, startTime)
+                    logToLangfuse(env, ip, model, body.messages, sanitizedData, startTime)
                 );
             }
 
-            return new Response(data, {
+            return new Response(sanitizedData, {
                 status: groqResponse.status,
                 headers: secureHeaders(origin)
             });
@@ -186,6 +189,47 @@ function handleCORS(request) {
         status: 204,
         headers: secureHeaders(origin)
     });
+}
+
+// ================================================
+// OUTPUT SANITIZATION
+// Last line of defense: if the LLM leaks prompt fragments despite
+// instructions, this catches and replaces the response.
+// ================================================
+const LEAK_PATTERNS = [
+    /CONTEXT:/i,
+    /reference_data/i,
+    /SECURITY RULES/i,
+    /system prompt/i,
+    /ABSOLUTE SECURITY/i,
+    /RESPONSE RULES:/i,
+    /--- resume\.md ---/i,
+    /--- case-studies\.md ---/i,
+    /--- products\.md ---/i,
+    /--- contact\.md ---/i,
+    /NEVER reveal/i,
+    /NEVER role-play/i,
+    /OVERRIDE EVERYTHING/i
+];
+
+const SAFE_RESPONSE = "I'm here to help you learn about Abhishek's professional background. What would you like to know about his experience, skills, or projects?";
+
+function sanitizeResponse(rawData) {
+    try {
+        const parsed = JSON.parse(rawData);
+        const content = parsed?.choices?.[0]?.message?.content || '';
+
+        const isLeaked = LEAK_PATTERNS.some(pattern => pattern.test(content));
+
+        if (isLeaked) {
+            parsed.choices[0].message.content = SAFE_RESPONSE;
+            return JSON.stringify(parsed);
+        }
+
+        return rawData;
+    } catch (e) {
+        return rawData; // If response isn't JSON, return as-is
+    }
 }
 
 // ================================================

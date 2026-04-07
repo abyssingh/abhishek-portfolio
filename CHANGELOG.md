@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.2.1] - 2026-04-08
+
+### Security
+- **Enhanced prompt injection defense:** Restructured system prompt — context wrapped in `<reference_data>` tags, security rules moved to end for recency bias, explicit keyword-based rejection rules
+- **Server-side output sanitization:** Worker now scans AI responses for leaked prompt fragments (`CONTEXT:`, `reference_data`, `SECURITY RULES`, etc.) and replaces them with a safe response before they reach the user
+
+---
+
 ## [1.2.0] - 2026-04-07
 
 ### Added
