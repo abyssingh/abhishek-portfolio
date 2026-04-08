@@ -19,3 +19,7 @@ desktop.ini
 # Temp
 /tmp/
 *.log
+
+# Langfuse / Evaluation (local-only, not for GitHub)
+api-proxy/golden-set.csv
+api-proxy/golden-set-upload.js
