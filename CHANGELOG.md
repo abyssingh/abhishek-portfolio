@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.3.0] - 2026-04-08
+
+### Changed — Architecture: Server-Side Prompt via Langfuse
+- **System prompt moved from client to server:** The full system prompt (instructions, security rules) is no longer hardcoded in `index.html`. It is now fetched at runtime by the Cloudflare Worker from **Langfuse Prompt Management**.
+- **New client→worker API format:** Browser now sends `{ userMessage, context, conversationHistory }` instead of a pre-built `{ messages }` array. The worker assembles the full messages array server-side.
+- **Prompt caching:** Worker caches the Langfuse prompt in memory for 5 minutes to avoid per-request latency.
+- **Graceful fallback:** If Langfuse is unavailable, the worker uses a built-in default prompt (cached for 30s before retrying).
+- **Backwards compatible:** Worker auto-detects old (v1.2) vs new (v1.3) request format, so the rollout is safe even if client and worker deploy at different times.
+
+### Added
+- **ARCHITECTURE.md:** New Architecture Decision Record (ADR) documenting all major design decisions with reasoning, options analysis, trade-offs, and impact assessments.
+- **Prompt version tracing:** Every Langfuse trace now includes `promptName` and `promptVersion` metadata, linking each AI response to the exact prompt version that generated it.
+
+### Security
+- **Prompt instructions no longer visible in browser source code.** Previously, anyone could open DevTools → Sources and read the full system prompt. Now only the knowledge context (public data from the portfolio) is visible client-side.
+
+### Impact
+- Prompt changes no longer require code deploys — edit in Langfuse UI → label as "production" → live within 5 minutes
+- Full version history of all prompt changes in Langfuse
+- Can A/B test prompt variants via Langfuse Experiments before promoting to production
+- Zero latency regression on cached path
+
+---
+
 ## [1.2.1] - 2026-04-08
 
 ### Security
