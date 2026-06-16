@@ -39,7 +39,15 @@ Go to [dash.cloudflare.com](https://dash.cloudflare.com) → Sign up (free)
 
 ### Configure Speech Providers
 
-The context-aware Voice Guide defaults to OpenAI for both speech-to-text and text-to-speech. The base chat LLM remains Groq unless changed separately in code.
+The context-aware Voice Guide uses OpenAI Realtime WebRTC for the primary handsfree voice experience. The older STT/TTS routes remain available as fallbacks/debug routes. The base chat LLM remains Groq unless changed separately in code.
+
+Default realtime voice config:
+
+- `REALTIME_MODEL`: `gpt-realtime-2`
+- `REALTIME_VOICE`: `marin`
+- `REALTIME_TRANSCRIPTION_MODEL`: `gpt-4o-mini-transcribe`
+- `REALTIME_VAD_THRESHOLD`: optional, defaults to `0.5`
+- `REALTIME_VAD_SILENCE_MS`: optional, defaults to `520`
 
 Default speech config:
 
@@ -70,6 +78,16 @@ Provider-specific optional secrets:
 
 If OpenAI TTS fails or is not configured, the website can still fall back to browser text-to-speech when available.
 7. Click **Save**
+
+### Realtime Voice Route
+
+The live handsfree assistant uses this Worker route:
+
+```txt
+POST /voice/realtime/session
+```
+
+The browser sends its WebRTC SDP offer and screen/portfolio context to the Worker. The Worker keeps `OPENAI_API_KEY` private, calls OpenAI Realtime, and returns the SDP answer to the browser.
 
 ### 4. Get Your Worker URL
 Your worker URL will be: `https://ask-abhishek-proxy.YOUR-SUBDOMAIN.workers.dev`

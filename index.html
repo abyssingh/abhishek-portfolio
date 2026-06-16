@@ -878,6 +878,7 @@
             transform: scale(1.08);
         }
 
+        #chat-container.assistant-state-live #chat-button,
         #chat-container.assistant-state-listening #chat-button,
         #chat-container.assistant-state-recording #chat-button {
             animation: voice-listening 1.1s ease-in-out infinite;
@@ -1782,7 +1783,7 @@
                 </div>
             </div>
             <div id="voice-guide-controls" class="voice-guide-controls" aria-live="polite">
-                <button id="voice-mic-btn" class="voice-mic-button" type="button" aria-label="Start voice input">
+                <button id="voice-mic-btn" class="voice-mic-button" type="button" aria-label="Start live voice">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
@@ -1791,8 +1792,8 @@
                     </svg>
                 </button>
                 <div class="voice-status-wrap">
-                    <span id="voice-status">Voice Guide ready</span>
-                    <span id="voice-support-note">Tap the mic and ask about Abhishek's work.</span>
+                    <span id="voice-status">Live Voice ready</span>
+                    <span id="voice-support-note">Start once, then speak handsfree.</span>
                 </div>
             </div>
             <form id="chat-input-form">
@@ -1953,6 +1954,12 @@
             let recordingChunks = [];
             let isRecording = false;
             let currentAudioUrl = null;
+            let realtimePeerConnection = null;
+            let realtimeDataChannel = null;
+            let realtimeMediaStream = null;
+            let realtimeRemoteAudio = null;
+            let isRealtimeActive = false;
+            let realtimeScreenContextTimer = null;
             const assistantScreenContext = {
                 currentSection: 'hero',
                 visibleTargets: [],
@@ -1991,6 +1998,7 @@
                 if (!chatContainer) return;
                 chatContainer.classList.remove(
                     'assistant-state-idle',
+                    'assistant-state-live',
                     'assistant-state-listening',
                     'assistant-state-recording',
                     'assistant-state-transcribing',
@@ -2012,14 +2020,14 @@
                 }
                 if (chatInput) {
                     chatInput.placeholder = mode === 'voice_context'
-                        ? 'Type or tap mic to ask...'
+                        ? 'Type here or start live voice...'
                         : 'Ask about experience, projects, skills...';
                 }
                 if (mode === 'voice_context') {
                     updateVoiceStatus(
-                        navigator.mediaDevices?.getUserMedia ? 'Voice Guide ready' : 'Voice fallback ready',
+                        navigator.mediaDevices?.getUserMedia && window.RTCPeerConnection ? 'Live Voice ready' : 'Voice fallback ready',
                         navigator.mediaDevices?.getUserMedia
-                            ? "Tap the mic and ask about Abhishek's work."
+                            ? 'Start once, then speak naturally. Interrupt anytime.'
                             : 'Voice capture is not available here. Typing still works.'
                     );
                 }
@@ -2143,13 +2151,14 @@
                 });
                 window.addEventListener('scroll', () => {
                     assistantScreenContext.visibleTargets = getVisibleTargets();
+                    queueRealtimeScreenContextUpdate();
                 }, { passive: true });
             };
 
             const getOutputLanguage = (text) => /[\u0900-\u097F]/.test(text) ? 'hi' : 'en';
 
             const speakAssistantResponse = async (text, language) => {
-                if (assistantMode !== 'voice_context' || !text) return;
+                if (assistantMode !== 'voice_context' || isRealtimeActive || !text) return;
                 setAssistantState('speaking');
                 try {
                     const response = await fetch(`${PROXY_URL}/voice/tts`, {
@@ -2279,6 +2288,208 @@
                 } catch (error) {
                     setAssistantState('error');
                     updateVoiceStatus('Transcription failed', 'You can edit the text box or type manually.');
+                }
+            };
+
+            const getFullKnowledgeContext = () => {
+                return knowledgeChunks
+                    .map(c => `--- ${c.filename} ---\n${c.content}`)
+                    .join('\n\n')
+                    .slice(0, 24000);
+            };
+
+            const getRealtimeScreenNote = () => {
+                return `Screen context update: current section is ${assistantScreenContext.currentSection}; visible targets are ${assistantScreenContext.visibleTargets.join(', ') || 'unknown'}; selected product is ${assistantScreenContext.selectedProductCard || 'none'}; work carousel index is ${assistantScreenContext.workCarouselIndex}.`;
+            };
+
+            const sendRealtimeEvent = (event) => {
+                if (!realtimeDataChannel || realtimeDataChannel.readyState !== 'open') return false;
+                realtimeDataChannel.send(JSON.stringify(event));
+                return true;
+            };
+
+            const queueRealtimeScreenContextUpdate = () => {
+                if (!isRealtimeActive || realtimeScreenContextTimer) return;
+                realtimeScreenContextTimer = setTimeout(() => {
+                    realtimeScreenContextTimer = null;
+                    sendRealtimeEvent({
+                        type: 'conversation.item.create',
+                        item: {
+                            type: 'message',
+                            role: 'user',
+                            content: [{ type: 'input_text', text: getRealtimeScreenNote() }]
+                        }
+                    });
+                }, 1200);
+            };
+
+            const startRealtimeVoiceSession = async () => {
+                if (isRealtimeActive) return;
+                if (!window.RTCPeerConnection || !navigator.mediaDevices?.getUserMedia) {
+                    setAssistantState('error');
+                    updateVoiceStatus('Live voice unavailable', 'Typing still works in Voice Guide.');
+                    return;
+                }
+
+                try {
+                    setAssistantState('thinking');
+                    updateVoiceStatus('Starting live voice', 'Opening a secure realtime session.');
+                    window.speechSynthesis?.cancel();
+                    if (!knowledgeLoaded) await fetchKnowledge();
+
+                    realtimeMediaStream = await navigator.mediaDevices.getUserMedia({
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true
+                        }
+                    });
+
+                    realtimePeerConnection = new RTCPeerConnection();
+                    realtimeRemoteAudio = realtimeRemoteAudio || document.createElement('audio');
+                    realtimeRemoteAudio.autoplay = true;
+                    realtimePeerConnection.ontrack = (event) => {
+                        realtimeRemoteAudio.srcObject = event.streams[0];
+                    };
+                    realtimeMediaStream.getAudioTracks().forEach((track) => {
+                        realtimePeerConnection.addTrack(track, realtimeMediaStream);
+                    });
+
+                    realtimeDataChannel = realtimePeerConnection.createDataChannel('oai-events');
+                    realtimeDataChannel.onopen = () => {
+                        isRealtimeActive = true;
+                        setAssistantState('live');
+                        updateVoiceStatus('Live Voice on', 'Speak naturally. You can interrupt anytime.');
+                        voiceMicBtn?.setAttribute('aria-label', 'Stop live voice');
+                        queueRealtimeScreenContextUpdate();
+                    };
+                    realtimeDataChannel.onmessage = (event) => handleRealtimeEvent(event);
+                    realtimeDataChannel.onerror = () => {
+                        setAssistantState('error');
+                        updateVoiceStatus('Live voice issue', 'Typed chat still works.');
+                    };
+                    realtimeDataChannel.onclose = () => {
+                        if (isRealtimeActive) stopRealtimeVoiceSession(false);
+                    };
+
+                    const offer = await realtimePeerConnection.createOffer();
+                    await realtimePeerConnection.setLocalDescription(offer);
+
+                    const response = await fetch(`${PROXY_URL}/voice/realtime/session`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            sdp: offer.sdp,
+                            context: getFullKnowledgeContext(),
+                            conversationHistory: conversationHistory.slice(-8),
+                            screenContext: assistantScreenContext
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.error || `Realtime failed: ${response.status}`);
+                    }
+
+                    await realtimePeerConnection.setRemoteDescription({
+                        type: 'answer',
+                        sdp: await response.text()
+                    });
+                } catch (error) {
+                    console.error('[Realtime Voice] start failed:', error);
+                    stopRealtimeVoiceSession(false);
+                    setAssistantState('error');
+                    updateVoiceStatus('Live voice failed', 'Please check Worker/OpenAI Realtime setup or use text chat.');
+                }
+            };
+
+            const stopRealtimeVoiceSession = (showReady = true) => {
+                isRealtimeActive = false;
+                clearTimeout(realtimeScreenContextTimer);
+                realtimeScreenContextTimer = null;
+                realtimeDataChannel?.close();
+                realtimePeerConnection?.close();
+                realtimeMediaStream?.getTracks().forEach((track) => track.stop());
+                realtimeDataChannel = null;
+                realtimePeerConnection = null;
+                realtimeMediaStream = null;
+                if (realtimeRemoteAudio) realtimeRemoteAudio.srcObject = null;
+                voiceMicBtn?.setAttribute('aria-label', 'Start live voice');
+                if (showReady) {
+                    setAssistantState('idle');
+                    updateVoiceStatus('Live Voice paused', 'Start again when you want handsfree help.');
+                }
+            };
+
+            const appendRealtimeMessage = (content, sender) => {
+                const clean = String(content || '').replace(/\s+/g, ' ').trim();
+                if (!clean) return;
+                hideStarters();
+                appendMessage(clean, sender);
+                conversationHistory.push({ role: sender === 'assistant' ? 'assistant' : 'user', content: clean });
+                if (conversationHistory.length > 20) conversationHistory = conversationHistory.slice(-20);
+            };
+
+            const handleRealtimeEvent = (messageEvent) => {
+                let event = null;
+                try {
+                    event = JSON.parse(messageEvent.data);
+                } catch (error) {
+                    return;
+                }
+
+                if (event.type === 'input_audio_buffer.speech_started') {
+                    window.speechSynthesis?.cancel();
+                    setAssistantState('listening');
+                    updateVoiceStatus('Listening', 'I heard you. Keep speaking naturally.');
+                }
+
+                if (event.type === 'input_audio_buffer.speech_stopped') {
+                    setAssistantState('thinking');
+                    updateVoiceStatus('Thinking', 'Working from voice and screen context.');
+                }
+
+                if (event.type === 'conversation.item.input_audio_transcription.completed') {
+                    const transcript = event.transcript || event.item?.content?.[0]?.transcript || '';
+                    appendRealtimeMessage(transcript, 'user');
+                    executeAssistantActions(inferLocalActions(transcript));
+                }
+
+                if (event.type === 'response.audio_transcript.done' || event.type === 'response.output_text.done') {
+                    appendRealtimeMessage(event.transcript || event.text || '', 'assistant');
+                }
+
+                if (event.type === 'response.audio.delta' || event.type === 'response.audio_transcript.delta') {
+                    setAssistantState('speaking');
+                    updateVoiceStatus('Speaking', 'You can interrupt me anytime.');
+                }
+
+                if (event.type === 'response.function_call_arguments.done') {
+                    handleRealtimeFunctionCall(event.name, event.arguments);
+                }
+
+                if (event.type === 'response.output_item.done' && event.item?.type === 'function_call') {
+                    handleRealtimeFunctionCall(event.item.name, event.item.arguments);
+                }
+
+                if (event.type === 'response.done') {
+                    setAssistantState('live');
+                    updateVoiceStatus('Live Voice on', 'Ask a follow-up anytime.');
+                }
+
+                if (event.type === 'error') {
+                    setAssistantState('error');
+                    updateVoiceStatus('Live voice error', event.error?.message || 'Typed chat still works.');
+                }
+            };
+
+            const handleRealtimeFunctionCall = (name, rawArguments) => {
+                if (name !== 'focus_portfolio_area') return;
+                try {
+                    const parsed = typeof rawArguments === 'string' ? JSON.parse(rawArguments) : rawArguments;
+                    executeAssistantActions(Array.isArray(parsed?.actions) ? parsed.actions : []);
+                } catch (error) {
+                    console.warn('[Realtime Voice] ignored invalid action payload');
                 }
             };
 
@@ -2470,6 +2681,7 @@
             });
 
             chatCloseBtn.addEventListener('click', () => {
+                stopRealtimeVoiceSession(false);
                 isChatOpen = false;
                 chatWindow.classList.remove('open');
                 document.getElementById('chat-container').classList.remove('chat-active');
@@ -2487,22 +2699,23 @@
 
             modeToggle?.addEventListener('click', () => {
                 const nextMode = assistantMode === 'voice_context' ? 'chat' : 'voice_context';
+                if (nextMode === 'chat') stopRealtimeVoiceSession(false);
                 setAssistantMode(nextMode);
                 appendMessage(nextMode === 'voice_context'
-                    ? 'Voice Guide is ready. You can tap the mic or keep typing.'
+                    ? 'Live Voice is ready. Start once, then speak handsfree.'
                     : 'Chat mode is ready. I will keep responses structured and easy to copy.',
                     'assistant'
                 );
             });
 
             voiceMicBtn?.addEventListener('click', () => {
-                if (isRecording) {
-                    stopVoiceCapture();
+                if (isRealtimeActive) {
+                    stopRealtimeVoiceSession(true);
                     return;
                 }
                 setAssistantMode('voice_context');
                 chatInput.value = '';
-                startVoiceCapture();
+                startRealtimeVoiceSession();
             });
 
             chatForm.addEventListener('submit', (e) => {
@@ -2517,6 +2730,19 @@
                 message = message.replace(/<[^>]*>/g, '').trim().slice(0, 500);
                 if (!message) return;
                 hideStarters();
+                if (assistantMode === 'voice_context' && isRealtimeActive && sendRealtimeEvent({
+                    type: 'conversation.item.create',
+                    item: {
+                        type: 'message',
+                        role: 'user',
+                        content: [{ type: 'input_text', text: message }]
+                    }
+                })) {
+                    appendRealtimeMessage(message, 'user');
+                    sendRealtimeEvent({ type: 'response.create' });
+                    executeAssistantActions(inferLocalActions(message));
+                    return;
+                }
                 appendMessage(message, 'user');
                 showLoader();
                 setAssistantState('thinking');
