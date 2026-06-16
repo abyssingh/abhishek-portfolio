@@ -46,6 +46,7 @@ Default realtime voice config:
 - `REALTIME_MODEL`: `gpt-realtime-2`
 - `REALTIME_VOICE`: `marin`
 - `REALTIME_TRANSCRIPTION_MODEL`: `gpt-4o-mini-transcribe`
+- `REALTIME_TRANSCRIPTION_PROMPT`: optional Hindi/Hinglish/domain vocabulary hint
 - `REALTIME_VAD_THRESHOLD`: optional, defaults to `0.5`
 - `REALTIME_VAD_SILENCE_MS`: optional, defaults to `520`
 
@@ -88,6 +89,16 @@ POST /voice/realtime/session
 ```
 
 The browser sends its WebRTC SDP offer and screen/portfolio context to the Worker. The Worker keeps `OPENAI_API_KEY` private, calls OpenAI Realtime, and returns the SDP answer to the browser.
+
+### Langfuse Observability
+
+Add these Worker secrets if you want full traces:
+
+- `LANGFUSE_PUBLIC_KEY`
+- `LANGFUSE_SECRET_KEY`
+- `LANGFUSE_HOST`: optional, defaults to `https://cloud.langfuse.com`
+
+Realtime voice creates one trace per live session and appends async events for session setup, speech start/stop, transcription, response start, assistant transcript, response completion, detected language, current section, prompt name/version, and timing metadata. These logs are fire-and-forget and do not block the live voice response path.
 
 ### 4. Get Your Worker URL
 Your worker URL will be: `https://ask-abhishek-proxy.YOUR-SUBDOMAIN.workers.dev`

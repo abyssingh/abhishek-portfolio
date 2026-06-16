@@ -37,6 +37,7 @@ const MAX_REQUESTS_PER_MINUTE = 10;
 const MAX_BODY_SIZE_BYTES = 50 * 1024; // 50 KB
 const MAX_AUDIO_SIZE_BYTES = 8 * 1024 * 1024; // 8 MB
 const MAX_REALTIME_SESSION_BYTES = 128 * 1024; // SDP + voice context
+const MAX_REALTIME_LOG_BYTES = 32 * 1024;
 const MAX_MESSAGES = 12;               // system + 5 exchanges + current user msg
 const MAX_MESSAGE_LENGTH = 1000;       // per-message content char limit
 const MAX_STRUCTURED_ACTIONS = 3;
@@ -86,6 +87,7 @@ const DEFAULT_ELEVENLABS_TTS_MODEL = 'eleven_multilingual_v2';
 const DEFAULT_REALTIME_MODEL = 'gpt-realtime-2';
 const DEFAULT_REALTIME_VOICE = 'marin';
 const DEFAULT_REALTIME_TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe';
+const DEFAULT_REALTIME_TRANSCRIPTION_PROMPT = 'The visitor may speak Hindi, Hinglish, or Indian English from the first utterance. Preserve Hindi/Hinglish intent. Common phrases include: Abhishek ne JioMart mein kya kiya, Abhishek ka experience kitna hai, is metric ka kya matlab hai, yeh number kis product ke liye hai. Product names: Abhishek Singh, JioMart, JioBlackRock, Jio Platforms, MyJio, JioFinance, AI Smart Assistant, MCP, RAG, Langfuse. Correct close-sounding ASR like Geomart or Geomath to JioMart.';
 
 // ================================================
 // FALLBACK SYSTEM PROMPT
@@ -145,7 +147,9 @@ export default {
         const contentLength = parseInt(request.headers.get('Content-Length') || '0', 10);
         const bodyLimit = path === '/voice/transcribe'
             ? MAX_AUDIO_SIZE_BYTES
-            : (path === '/voice/realtime/session' ? MAX_REALTIME_SESSION_BYTES : MAX_BODY_SIZE_BYTES);
+            : (path === '/voice/realtime/session'
+                ? MAX_REALTIME_SESSION_BYTES
+                : (path === '/voice/realtime/log' ? MAX_REALTIME_LOG_BYTES : MAX_BODY_SIZE_BYTES));
         if (contentLength > bodyLimit) {
             return new Response(JSON.stringify({ error: 'Request too large' }), {
                 status: 413,
@@ -153,8 +157,13 @@ export default {
             });
         }
 
-        // --- Rate limiting by IP ---
         const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+
+        if (path === '/voice/realtime/log') {
+            return handleRealtimeLog(request, env, origin, ip);
+        }
+
+        // --- Rate limiting by IP ---
         const now = Date.now();
         const rateData = RATE_LIMIT_MAP.get(ip) || { count: 0, resetTime: now + 60000 };
 
@@ -184,7 +193,7 @@ export default {
         }
 
         if (path === '/voice/realtime/session') {
-            return handleRealtimeSession(request, env, origin);
+            return handleRealtimeSession(request, env, origin, ctx, ip);
         }
 
         // --- Process request ---
@@ -382,6 +391,7 @@ function sdpHeaders(origin) {
         'Access-Control-Allow-Origin': origin,
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Expose-Headers': 'X-Langfuse-Trace-Id, X-Realtime-Prompt-Name, X-Realtime-Prompt-Version, X-Realtime-Model',
         'Content-Type': 'application/sdp',
         'X-Content-Type-Options': 'nosniff'
     };
@@ -613,7 +623,7 @@ async function handleVoiceTts(request, env, origin) {
     }
 }
 
-async function handleRealtimeSession(request, env, origin) {
+async function handleRealtimeSession(request, env, origin, ctx, ip) {
     if (!env.OPENAI_API_KEY) {
         return new Response(JSON.stringify({ error: 'Missing OPENAI_API_KEY' }), {
             status: 500,
@@ -622,6 +632,9 @@ async function handleRealtimeSession(request, env, origin) {
     }
 
     try {
+        const startedAtMs = Date.now();
+        const startTime = new Date(startedAtMs).toISOString();
+        const traceId = crypto.randomUUID();
         const body = await request.json();
         const sdp = typeof body.sdp === 'string' ? body.sdp : '';
         if (!sdp || !sdp.includes('v=0')) {
@@ -641,19 +654,22 @@ async function handleRealtimeSession(request, env, origin) {
             ? body.conversationHistory.slice(-8)
             : [];
 
+        const promptFetchStartMs = Date.now();
         const promptResult = await fetchLangfusePrompt(env, VOICE_PROMPT_NAME, 'voice_context');
+        const promptFetchMs = Date.now() - promptFetchStartMs;
         const promptTemplate = promptResult.prompt || buildFallbackVoicePrompt();
         const instructions = buildRealtimeInstructions(promptTemplate, context, screenContext, history);
-        const form = new FormData();
-        form.set('sdp', sdp);
-        form.set('session', JSON.stringify({
+        const realtimeModel = env.REALTIME_MODEL || DEFAULT_REALTIME_MODEL;
+        const realtimeTranscriptionPrompt = env.REALTIME_TRANSCRIPTION_PROMPT || DEFAULT_REALTIME_TRANSCRIPTION_PROMPT;
+        const sessionPayload = {
             type: 'realtime',
-            model: env.REALTIME_MODEL || DEFAULT_REALTIME_MODEL,
+            model: realtimeModel,
             instructions,
             audio: {
                 input: {
                     transcription: {
-                        model: env.REALTIME_TRANSCRIPTION_MODEL || DEFAULT_REALTIME_TRANSCRIPTION_MODEL
+                        model: env.REALTIME_TRANSCRIPTION_MODEL || DEFAULT_REALTIME_TRANSCRIPTION_MODEL,
+                        prompt: realtimeTranscriptionPrompt
                     },
                     turn_detection: {
                         type: 'server_vad',
@@ -704,28 +720,120 @@ async function handleRealtimeSession(request, env, origin) {
                     }
                 }
             ]
-        }));
+        };
 
-        const realtimeResponse = await fetch(`${OPENAI_API_BASE_URL}/realtime/calls`, {
+        const buildRealtimeForm = (includeTranscriptionPrompt = true) => {
+            const form = new FormData();
+            const payload = JSON.parse(JSON.stringify(sessionPayload));
+            if (!includeTranscriptionPrompt) {
+                delete payload.audio.input.transcription.prompt;
+            }
+            form.set('sdp', sdp);
+            form.set('session', JSON.stringify(payload));
+            return form;
+        };
+
+        const openaiStartMs = Date.now();
+        let usedTranscriptionPrompt = true;
+        let realtimeResponse = await fetch(`${OPENAI_API_BASE_URL}/realtime/calls`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
                 'OpenAI-Safety-Identifier': await safetyIdentifier(origin)
             },
-            body: form
+            body: buildRealtimeForm(true)
         });
 
-        const answerSdp = await realtimeResponse.text();
+        let answerSdp = await realtimeResponse.text();
+        if (!realtimeResponse.ok && /prompt|transcription|unknown|unsupported/i.test(answerSdp || '')) {
+            usedTranscriptionPrompt = false;
+            realtimeResponse = await fetch(`${OPENAI_API_BASE_URL}/realtime/calls`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
+                    'OpenAI-Safety-Identifier': await safetyIdentifier(origin)
+                },
+                body: buildRealtimeForm(false)
+            });
+            answerSdp = await realtimeResponse.text();
+        }
+        const openaiMs = Date.now() - openaiStartMs;
         if (!realtimeResponse.ok) {
+            if (ctx && env.LANGFUSE_PUBLIC_KEY && env.LANGFUSE_SECRET_KEY) {
+                ctx.waitUntil(logRealtimeSessionToLangfuse(env, {
+                    traceId,
+                    userIp: ip,
+                    startTime,
+                    endTime: new Date().toISOString(),
+                    model: realtimeModel,
+                    promptName: VOICE_PROMPT_NAME,
+                    promptVersion: promptResult.version || 'unknown',
+                    input: {
+                        screenContext,
+                        contextChars: context.length,
+                        historyCount: history.length
+                    },
+                    output: answerSdp.slice(0, 1200),
+                    metadata: {
+                        status: 'error',
+                        origin,
+                        prompt_fetch_ms: promptFetchMs,
+                        openai_sdp_ms: openaiMs,
+                        realtime_model: realtimeModel,
+                        transcription_model: env.REALTIME_TRANSCRIPTION_MODEL || DEFAULT_REALTIME_TRANSCRIPTION_MODEL,
+                        transcription_prompt_enabled: usedTranscriptionPrompt
+                    }
+                }));
+            }
             return new Response(JSON.stringify({ error: answerSdp || 'Realtime session failed' }), {
                 status: realtimeResponse.status,
                 headers: secureHeaders(origin)
             });
         }
 
+        if (ctx && env.LANGFUSE_PUBLIC_KEY && env.LANGFUSE_SECRET_KEY) {
+            ctx.waitUntil(logRealtimeSessionToLangfuse(env, {
+                traceId,
+                userIp: ip,
+                startTime,
+                endTime: new Date().toISOString(),
+                model: realtimeModel,
+                promptName: VOICE_PROMPT_NAME,
+                promptVersion: promptResult.version || 'unknown',
+                input: {
+                    screenContext,
+                    contextChars: context.length,
+                    historyCount: history.length,
+                    instructionsChars: instructions.length
+                },
+                output: 'Realtime WebRTC session established',
+                metadata: {
+                    status: 'connected',
+                    origin,
+                    assistant_mode: 'voice_context',
+                    input_modality: 'voice',
+                    output_modality: 'live_voice',
+                    prompt_fetch_ms: promptFetchMs,
+                    openai_sdp_ms: openaiMs,
+                    total_session_setup_ms: Date.now() - startedAtMs,
+                    realtime_model: realtimeModel,
+                    realtime_voice: env.REALTIME_VOICE || env.TTS_VOICE || DEFAULT_REALTIME_VOICE,
+                    transcription_model: env.REALTIME_TRANSCRIPTION_MODEL || DEFAULT_REALTIME_TRANSCRIPTION_MODEL,
+                    transcription_prompt_enabled: usedTranscriptionPrompt,
+                    default_language_policy: 'auto_hindi_hinglish_english'
+                }
+            }));
+        }
+
         return new Response(answerSdp, {
             status: 200,
-            headers: sdpHeaders(origin)
+            headers: {
+                ...sdpHeaders(origin),
+                'X-Langfuse-Trace-Id': traceId,
+                'X-Realtime-Prompt-Name': VOICE_PROMPT_NAME,
+                'X-Realtime-Prompt-Version': String(promptResult.version || 'fallback'),
+                'X-Realtime-Model': realtimeModel
+            }
         });
     } catch (err) {
         return new Response(JSON.stringify({ error: 'Realtime session failed' }), {
@@ -753,7 +861,8 @@ function buildRealtimeInstructions(promptTemplate, context, screenContext, histo
 LIVE VOICE MODE:
 - This is a handsfree live conversation. Listen continuously after mic permission is granted.
 - Keep spoken replies natural, crisp, human, and non-bulleted.
-- Support English, Hindi, and Hinglish. Reply in the visitor's language when confident, otherwise use polished English/Hinglish.
+- Support English, Hindi, and Hinglish from the very first utterance. Do not wait for the visitor to explicitly ask for Hindi.
+- Detect the visitor's current language from audio/transcript each turn. If they speak Hindi or Hinglish, reply in Hindi/Hinglish. If they speak English, reply in English. Keep product names in English.
 - The visitor can interrupt while you are speaking. Stop gracefully and respond to the latest intent.
 - Use the current screen context when the visitor says things like "this", "these numbers", "take me there", or asks what they are viewing.
 - Treat close-sounding portfolio terms as known entities. Geomath, Geomart, Geo Mart, Gio Mart, and Jio Mart mean JioMart. Geo BlackRock, Gio BlackRock, and BlackRock mean JioBlackRock when the portfolio context is product work. Geo Platforms means Jio Platforms.
@@ -775,6 +884,53 @@ ${JSON.stringify(screenContext || {})}
 
 Recent conversation:
 ${conversationSummary || 'No previous turns in this session.'}`;
+}
+
+async function handleRealtimeLog(request, env, origin, ip) {
+    try {
+        const body = await request.json();
+        const traceId = typeof body.traceId === 'string' ? body.traceId.slice(0, 80) : '';
+        if (!traceId) {
+            return new Response(JSON.stringify({ error: 'Missing traceId' }), {
+                status: 400,
+                headers: secureHeaders(origin)
+            });
+        }
+
+        if (env.LANGFUSE_PUBLIC_KEY && env.LANGFUSE_SECRET_KEY) {
+            await logRealtimeEventToLangfuse(env, {
+                traceId,
+                userIp: ip,
+                eventType: typeof body.eventType === 'string' ? body.eventType.slice(0, 80) : 'voice_event',
+                input: body.input || null,
+                output: body.output || null,
+                metadata: {
+                    origin,
+                    assistant_mode: 'voice_context',
+                    input_modality: 'voice',
+                    output_modality: 'live_voice',
+                    client_elapsed_ms: Number(body.elapsedMs || 0),
+                    current_section: body.currentSection || 'unknown',
+                    detected_language: body.detectedLanguage || 'unknown',
+                    state: body.state || 'unknown',
+                    prompt_name: body.promptName || VOICE_PROMPT_NAME,
+                    prompt_version: body.promptVersion || 'unknown',
+                    realtime_model: body.model || 'unknown',
+                    ...(body.metadata && typeof body.metadata === 'object' ? body.metadata : {})
+                }
+            });
+        }
+
+        return new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: secureHeaders(origin)
+        });
+    } catch (err) {
+        return new Response(JSON.stringify({ error: 'Realtime log failed' }), {
+            status: 500,
+            headers: secureHeaders(origin)
+        });
+    }
 }
 
 async function safetyIdentifier(origin) {
@@ -1062,4 +1218,91 @@ async function logToLangfuse(env, userIp, model, messages, responseData, startTi
         // Silently fail — observability should never break the user experience
         console.error('[Langfuse] Logging failed:', err.message);
     }
+}
+
+async function logRealtimeSessionToLangfuse(env, payload) {
+    try {
+        const generationId = crypto.randomUUID();
+        const batch = [
+            {
+                id: crypto.randomUUID(),
+                type: 'trace-create',
+                timestamp: payload.startTime,
+                body: {
+                    id: payload.traceId,
+                    name: 'ask-abhishek-realtime-voice',
+                    input: payload.input,
+                    output: payload.output,
+                    userId: payload.userIp,
+                    metadata: {
+                        origin: 'cloudflare-worker',
+                        promptName: payload.promptName,
+                        promptVersion: payload.promptVersion,
+                        ...payload.metadata
+                    },
+                    tags: ['portfolio', 'voice', 'realtime', 'v2']
+                }
+            },
+            {
+                id: crypto.randomUUID(),
+                type: 'generation-create',
+                timestamp: payload.startTime,
+                body: {
+                    id: generationId,
+                    traceId: payload.traceId,
+                    name: 'openai-realtime-session',
+                    startTime: payload.startTime,
+                    endTime: payload.endTime,
+                    model: payload.model,
+                    modelParameters: {
+                        voice: payload.metadata?.realtime_voice,
+                        transcriptionModel: payload.metadata?.transcription_model
+                    },
+                    input: payload.input,
+                    output: payload.output,
+                    promptName: payload.promptName,
+                    promptVersion: payload.promptVersion
+                }
+            }
+        ];
+        await ingestLangfuseBatch(env, batch);
+    } catch (err) {
+        console.error('[Langfuse] Realtime session logging failed:', err.message);
+    }
+}
+
+async function logRealtimeEventToLangfuse(env, payload) {
+    try {
+        const now = new Date().toISOString();
+        await ingestLangfuseBatch(env, [
+            {
+                id: crypto.randomUUID(),
+                type: 'event-create',
+                timestamp: now,
+                body: {
+                    traceId: payload.traceId,
+                    name: `realtime.${payload.eventType}`,
+                    input: payload.input,
+                    output: payload.output,
+                    level: 'DEFAULT',
+                    metadata: payload.metadata
+                }
+            }
+        ]);
+    } catch (err) {
+        console.error('[Langfuse] Realtime event logging failed:', err.message);
+    }
+}
+
+async function ingestLangfuseBatch(env, batch) {
+    const authHeader = 'Basic ' + btoa(`${env.LANGFUSE_PUBLIC_KEY}:${env.LANGFUSE_SECRET_KEY}`);
+    const langfuseHost = env.LANGFUSE_HOST || 'https://cloud.langfuse.com';
+    await fetch(`${langfuseHost}/api/public/ingestion`, {
+        method: 'POST',
+        headers: {
+            'Authorization': authHeader,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ batch })
+    });
 }

@@ -1960,6 +1960,15 @@
             let realtimeRemoteAudio = null;
             let isRealtimeActive = false;
             let realtimeScreenContextTimer = null;
+            let realtimeTraceId = null;
+            let realtimePromptName = null;
+            let realtimePromptVersion = null;
+            let realtimeModel = null;
+            let realtimeSessionStartedAt = 0;
+            let realtimeSpeechStartedAt = 0;
+            let realtimeSpeechStoppedAt = 0;
+            let realtimeResponseStartedAt = 0;
+            let realtimeDetectedLanguage = 'auto';
             const assistantScreenContext = {
                 currentSection: 'hero',
                 visibleTargets: [],
@@ -2332,6 +2341,39 @@ Experience answer: If asked how many years of Product Management experience Abhi
                 return true;
             };
 
+            const detectRealtimeLanguage = (text) => {
+                const value = String(text || '').toLowerCase();
+                if (/[\u0900-\u097F]/.test(value)) return 'hi';
+                const hindiRoman = /\b(kya|kaise|kitna|kitne|karta|kiya|mein|me|hai|hain|tha|the|batao|samjhao|abhishek ne|usne|iska|kis product|ka matlab|baat karo|hindi)\b/i;
+                if (hindiRoman.test(value)) return 'hi';
+                return 'en';
+            };
+
+            const logRealtimeClientEvent = (eventType, payload = {}) => {
+                if (!realtimeTraceId) return;
+                const body = JSON.stringify({
+                    traceId: realtimeTraceId,
+                    eventType,
+                    elapsedMs: Math.round(performance.now() - realtimeSessionStartedAt),
+                    currentSection: assistantScreenContext.currentSection,
+                    detectedLanguage: realtimeDetectedLanguage,
+                    state: assistantState,
+                    promptName: realtimePromptName,
+                    promptVersion: realtimePromptVersion,
+                    model: realtimeModel,
+                    input: payload.input || null,
+                    output: payload.output || null,
+                    metadata: payload.metadata || {}
+                });
+                const url = `${PROXY_URL}/voice/realtime/log`;
+                fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body,
+                    keepalive: true
+                }).catch(() => {});
+            };
+
             const queueRealtimeScreenContextUpdate = () => {
                 if (!isRealtimeActive || realtimeScreenContextTimer) return;
                 realtimeScreenContextTimer = setTimeout(() => {
@@ -2415,9 +2457,20 @@ Experience answer: If asked how many years of Product Management experience Abhi
                         throw new Error(errorData.error || `Realtime failed: ${response.status}`);
                     }
 
+                    realtimeTraceId = response.headers.get('X-Langfuse-Trace-Id');
+                    realtimePromptName = response.headers.get('X-Realtime-Prompt-Name');
+                    realtimePromptVersion = response.headers.get('X-Realtime-Prompt-Version');
+                    realtimeModel = response.headers.get('X-Realtime-Model');
+                    realtimeSessionStartedAt = performance.now();
                     await realtimePeerConnection.setRemoteDescription({
                         type: 'answer',
                         sdp: await response.text()
+                    });
+                    logRealtimeClientEvent('session_ready', {
+                        metadata: {
+                            visible_targets: assistantScreenContext.visibleTargets,
+                            current_section: assistantScreenContext.currentSection
+                        }
                     });
                 } catch (error) {
                     console.error('[Realtime Voice] start failed:', error);
@@ -2438,6 +2491,14 @@ Experience answer: If asked how many years of Product Management experience Abhi
                 realtimePeerConnection = null;
                 realtimeMediaStream = null;
                 if (realtimeRemoteAudio) realtimeRemoteAudio.srcObject = null;
+                logRealtimeClientEvent('session_stopped', {
+                    metadata: { stopped_by_user: showReady }
+                });
+                realtimeTraceId = null;
+                realtimePromptName = null;
+                realtimePromptVersion = null;
+                realtimeModel = null;
+                realtimeDetectedLanguage = 'auto';
                 voiceMicBtn?.setAttribute('aria-label', 'Start live voice');
                 if (showReady) {
                     setAssistantState('idle');
@@ -2463,27 +2524,59 @@ Experience answer: If asked how many years of Product Management experience Abhi
                 }
 
                 if (event.type === 'input_audio_buffer.speech_started') {
+                    realtimeSpeechStartedAt = performance.now();
                     window.speechSynthesis?.cancel();
                     setAssistantState('listening');
                     updateVoiceStatus('Listening', 'I heard you. Keep speaking naturally.');
+                    logRealtimeClientEvent('speech_started');
                 }
 
                 if (event.type === 'input_audio_buffer.speech_stopped') {
+                    realtimeSpeechStoppedAt = performance.now();
                     setAssistantState('thinking');
                     updateVoiceStatus('Thinking', 'Working from voice and screen context.');
+                    logRealtimeClientEvent('speech_stopped', {
+                        metadata: {
+                            speech_duration_ms: Math.round(realtimeSpeechStoppedAt - realtimeSpeechStartedAt)
+                        }
+                    });
                 }
 
                 if (event.type === 'conversation.item.input_audio_transcription.completed') {
                     const transcript = normalizeVoiceDomainTerms(event.transcript || event.item?.content?.[0]?.transcript || '');
+                    realtimeDetectedLanguage = detectRealtimeLanguage(transcript);
                     appendRealtimeMessage(transcript, 'user');
                     executeAssistantActions(inferLocalActions(transcript));
+                    logRealtimeClientEvent('transcription_completed', {
+                        input: transcript,
+                        metadata: {
+                            language_detected_from_transcript: realtimeDetectedLanguage,
+                            transcription_after_speech_ms: realtimeSpeechStoppedAt
+                                ? Math.round(performance.now() - realtimeSpeechStoppedAt)
+                                : 0
+                        }
+                    });
                 }
 
                 if (event.type === 'response.audio_transcript.done' || event.type === 'response.output_text.done') {
-                    appendRealtimeMessage(event.transcript || event.text || '', 'assistant');
+                    const assistantText = event.transcript || event.text || '';
+                    appendRealtimeMessage(assistantText, 'assistant');
+                    logRealtimeClientEvent('assistant_transcript_done', {
+                        output: assistantText
+                    });
                 }
 
                 if (event.type === 'response.audio.delta' || event.type === 'response.audio_transcript.delta') {
+                    if (!realtimeResponseStartedAt || realtimeResponseStartedAt < realtimeSpeechStoppedAt) {
+                        realtimeResponseStartedAt = performance.now();
+                        logRealtimeClientEvent('response_started', {
+                            metadata: {
+                                response_latency_from_speech_stop_ms: realtimeSpeechStoppedAt
+                                    ? Math.round(realtimeResponseStartedAt - realtimeSpeechStoppedAt)
+                                    : 0
+                            }
+                        });
+                    }
                     setAssistantState('speaking');
                     updateVoiceStatus('Speaking', 'You can interrupt me anytime.');
                 }
@@ -2499,11 +2592,21 @@ Experience answer: If asked how many years of Product Management experience Abhi
                 if (event.type === 'response.done') {
                     setAssistantState('live');
                     updateVoiceStatus('Live Voice on', 'Ask a follow-up anytime.');
+                    logRealtimeClientEvent('response_done', {
+                        metadata: {
+                            response_duration_ms: realtimeResponseStartedAt
+                                ? Math.round(performance.now() - realtimeResponseStartedAt)
+                                : 0
+                        }
+                    });
                 }
 
                 if (event.type === 'error') {
                     setAssistantState('error');
                     updateVoiceStatus('Live voice error', event.error?.message || 'Typed chat still works.');
+                    logRealtimeClientEvent('error', {
+                        metadata: { message: event.error?.message || 'unknown realtime error' }
+                    });
                 }
             };
 
