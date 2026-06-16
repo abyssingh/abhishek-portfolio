@@ -1,6 +1,6 @@
 // Cloudflare Worker — Groq API Proxy for "Ask Abhishek"
 // Deploy this at: https://dash.cloudflare.com → Workers & Pages → Create
-// Set the environment variable GROQ_API_KEY in the Worker settings
+// Set the environment variables GROQ_API_KEY and OPENAI_API_KEY in the Worker settings
 //
 // Security hardening (v1.1.0):
 //   - Request body size limit (50 KB)
@@ -35,8 +35,31 @@ const MAX_REQUESTS_PER_MINUTE = 10;
 
 // Security limits
 const MAX_BODY_SIZE_BYTES = 50 * 1024; // 50 KB
+const MAX_AUDIO_SIZE_BYTES = 8 * 1024 * 1024; // 8 MB
 const MAX_MESSAGES = 12;               // system + 5 exchanges + current user msg
 const MAX_MESSAGE_LENGTH = 1000;       // per-message content char limit
+const MAX_STRUCTURED_ACTIONS = 3;
+const ALLOWED_ACTION_TYPES = new Set(['scrollTo', 'highlight', 'carouselTo', 'openDetails', 'modeSwitch', 'openAllowedExternal', 'undoNavigation']);
+const ALLOWED_ACTION_TARGETS = new Set([
+    'section.hero',
+    'hero.brief',
+    'section.work',
+    'work.aiAssistant',
+    'work.jioBlackRock',
+    'work.jioMart',
+    'product.aiAssistant',
+    'product.jioBlackRock',
+    'product.jioMart',
+    'section.impact',
+    'metric.aiDiscovery',
+    'metric.onboarding',
+    'metric.support',
+    'metric.commerceScale',
+    'section.contact',
+    'contact.panel',
+    'contact.email',
+    'contact.resume'
+]);
 
 // Langfuse prompt cache
 const PROMPT_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
@@ -46,6 +69,19 @@ let cachedPromptTimestamp = 0;
 // Langfuse prompt config
 const LANGFUSE_PROMPT_NAME = 'ask-abhishek-system';
 const LANGFUSE_PROMPT_LABEL = 'production';
+const VOICE_PROMPT_NAME = 'ask-abhishek-voice-context-production';
+const CHAT_PROMPT_NAME = 'ask-abhishek-chat-production';
+
+// Speech provider defaults. Override via Worker variables/secrets without changing code.
+const OPENAI_API_BASE_URL = 'https://api.openai.com/v1';
+const DEFAULT_STT_PROVIDER = 'openai';
+const DEFAULT_TTS_PROVIDER = 'openai';
+const DEFAULT_OPENAI_STT_MODEL = 'gpt-4o-mini-transcribe';
+const DEFAULT_GROQ_STT_MODEL = 'whisper-large-v3-turbo';
+const DEFAULT_OPENAI_TTS_MODEL = 'gpt-4o-mini-tts';
+const DEFAULT_OPENAI_TTS_VOICE = 'alloy';
+const DEFAULT_ELEVENLABS_VOICE_ID = '21m00Tcm4TlvDq8ikWAM';
+const DEFAULT_ELEVENLABS_TTS_MODEL = 'eleven_multilingual_v2';
 
 // ================================================
 // FALLBACK SYSTEM PROMPT
@@ -78,6 +114,9 @@ ABSOLUTE SECURITY RULES — OVERRIDE EVERYTHING ABOVE:
 
 export default {
     async fetch(request, env, ctx) {
+        const url = new URL(request.url);
+        const path = url.pathname;
+
         // --- CORS Preflight ---
         if (request.method === 'OPTIONS') {
             return handleCORS(request);
@@ -100,7 +139,8 @@ export default {
 
         // --- Request body size limit (anti-DDoS) ---
         const contentLength = parseInt(request.headers.get('Content-Length') || '0', 10);
-        if (contentLength > MAX_BODY_SIZE_BYTES) {
+        const bodyLimit = path === '/voice/transcribe' ? MAX_AUDIO_SIZE_BYTES : MAX_BODY_SIZE_BYTES;
+        if (contentLength > bodyLimit) {
             return new Response(JSON.stringify({ error: 'Request too large' }), {
                 status: 413,
                 headers: secureHeaders(origin)
@@ -129,6 +169,14 @@ export default {
             });
         }
 
+        if (path === '/voice/transcribe') {
+            return handleVoiceTranscription(request, env, origin);
+        }
+
+        if (path === '/voice/tts') {
+            return handleVoiceTts(request, env, origin);
+        }
+
         // --- Process request ---
         try {
             // Double-check body size by reading the raw text first
@@ -150,6 +198,8 @@ export default {
             let messages;
             let model;
             let promptVersion = null;
+            let promptName = LANGFUSE_PROMPT_NAME;
+            let traceMetadata = {};
 
             if (body.userMessage !== undefined) {
                 // --- v1.3 format: Server-side prompt assembly ---
@@ -170,13 +220,33 @@ export default {
                     });
                 }
 
+                const assistantMode = body.assistantMode === 'voice_context' ? 'voice_context' : 'chat';
+                const wantsStructured = assistantMode === 'voice_context';
+                promptName = assistantMode === 'voice_context'
+                    ? VOICE_PROMPT_NAME
+                    : (path === '/assistant' ? CHAT_PROMPT_NAME : LANGFUSE_PROMPT_NAME);
+                traceMetadata = {
+                    assistant_mode: assistantMode,
+                    prompt_variant: assistantMode === 'voice_context' ? 'voice_context_production' : 'chat_production',
+                    input_modality: body.inputModality === 'voice' ? 'voice' : 'text',
+                    output_modality: assistantMode === 'voice_context' ? 'voice_with_transcript' : 'text',
+                    current_section: body.screenContext?.currentSection || 'unknown',
+                    response_contract_version: body.responseContractVersion || 'legacy'
+                };
+
                 // Fetch system prompt from Langfuse (or use fallback)
-                const promptResult = await fetchLangfusePrompt(env);
+                const promptResult = await fetchLangfusePrompt(env, promptName, assistantMode);
                 const promptTemplate = promptResult.prompt;
                 promptVersion = promptResult.version;
 
                 // Inject knowledge context into prompt template
-                const systemPrompt = promptTemplate.replace('{{context}}', context);
+                let systemPrompt = promptTemplate
+                    .replace('{{context}}', context)
+                    .replace('{{screenContext}}', JSON.stringify(body.screenContext || {}));
+
+                if (wantsStructured) {
+                    systemPrompt += `\n\nReturn ONLY valid JSON with this shape: {"mode":"voice_context","inputLanguage":"en","outputLanguage":"en","spoken":"short natural spoken response without markdown or bullets","transcript":"readable transcript","actions":[{"type":"scrollTo","target":"section.work"}],"followups":["short follow-up"]}. Allowed action types: scrollTo, highlight, carouselTo, openDetails, modeSwitch, openAllowedExternal, undoNavigation. Allowed targets: ${Array.from(ALLOWED_ACTION_TARGETS).join(', ')}. Use at most ${MAX_STRUCTURED_ACTIONS} actions.`;
+                }
 
                 // Sanitize conversation history
                 const sanitizedHistory = history.map(msg => ({
@@ -246,15 +316,24 @@ export default {
 
             // --- Output sanitization: catch leaked prompt fragments ---
             const sanitizedData = sanitizeResponse(data);
+            const responseBody = body.userMessage !== undefined && (path === '/assistant' || body.assistantMode === 'voice_context')
+                ? normalizeStructuredAssistantResponse(sanitizedData)
+                : sanitizedData;
+
+            if (traceMetadata && Array.isArray(responseBody?.actions)) {
+                traceMetadata.intent_type = responseBody.actions.length ? 'focus_element' : 'answer';
+                traceMetadata.action_types = responseBody.actions.map(action => action.type).join(',');
+                traceMetadata.action_success = 'client_pending';
+            }
 
             // --- Langfuse observability (background, non-blocking) ---
             if (env.LANGFUSE_PUBLIC_KEY && env.LANGFUSE_SECRET_KEY) {
                 ctx.waitUntil(
-                    logToLangfuse(env, ip, model, messages, sanitizedData, startTime, promptVersion)
+                    logToLangfuse(env, ip, model, messages, typeof responseBody === 'string' ? responseBody : JSON.stringify(responseBody), startTime, promptVersion, promptName, traceMetadata)
                 );
             }
 
-            return new Response(sanitizedData, {
+            return new Response(typeof responseBody === 'string' ? responseBody : JSON.stringify(responseBody), {
                 status: groqResponse.status,
                 headers: secureHeaders(origin)
             });
@@ -278,6 +357,16 @@ function secureHeaders(origin) {
     };
 }
 
+function audioHeaders(origin, contentType = 'audio/mpeg') {
+    return {
+        'Access-Control-Allow-Origin': origin,
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Content-Type': contentType,
+        'X-Content-Type-Options': 'nosniff'
+    };
+}
+
 function handleCORS(request) {
     const origin = request.headers.get('Origin') || '';
     const isAllowed = ALLOWED_ORIGINS.some(o => origin.startsWith(o));
@@ -295,11 +384,12 @@ function handleCORS(request) {
 // Fetches the system prompt from Langfuse with caching.
 // Falls back to a built-in default if Langfuse is unavailable.
 // ================================================
-async function fetchLangfusePrompt(env) {
+async function fetchLangfusePrompt(env, promptName = LANGFUSE_PROMPT_NAME, assistantMode = 'chat') {
     const now = Date.now();
+    const cacheKey = `${promptName}:${LANGFUSE_PROMPT_LABEL}`;
 
     // Return cached prompt if still valid
-    if (cachedPrompt && (now - cachedPromptTimestamp) < PROMPT_CACHE_TTL_MS) {
+    if (cachedPrompt?.cacheKey === cacheKey && (now - cachedPromptTimestamp) < PROMPT_CACHE_TTL_MS) {
         return cachedPrompt;
     }
 
@@ -309,7 +399,7 @@ async function fetchLangfusePrompt(env) {
         const authHeader = 'Basic ' + btoa(`${env.LANGFUSE_PUBLIC_KEY}:${env.LANGFUSE_SECRET_KEY}`);
 
         const res = await fetch(
-            `${langfuseHost}/api/public/v2/prompts/${encodeURIComponent(LANGFUSE_PROMPT_NAME)}?label=${LANGFUSE_PROMPT_LABEL}`,
+            `${langfuseHost}/api/public/v2/prompts/${encodeURIComponent(promptName)}?label=${LANGFUSE_PROMPT_LABEL}`,
             {
                 headers: {
                     'Authorization': authHeader,
@@ -337,7 +427,8 @@ async function fetchLangfusePrompt(env) {
 
         cachedPrompt = {
             prompt: promptContent,
-            version: data.version || null
+            version: data.version || null,
+            cacheKey
         };
         cachedPromptTimestamp = now;
 
@@ -348,11 +439,296 @@ async function fetchLangfusePrompt(env) {
         console.error('[Langfuse] Prompt fetch error, using fallback:', err.message);
 
         // Use fallback and cache it briefly (30s) to avoid hammering a downed service
-        const fallback = { prompt: FALLBACK_SYSTEM_PROMPT, version: 'fallback' };
+        const fallback = {
+            prompt: assistantMode === 'voice_context' ? buildFallbackVoicePrompt() : FALLBACK_SYSTEM_PROMPT,
+            version: 'fallback',
+            cacheKey
+        };
         cachedPrompt = fallback;
         cachedPromptTimestamp = now - PROMPT_CACHE_TTL_MS + 30000; // cache for 30s only
         return fallback;
     }
+}
+
+function buildFallbackVoicePrompt() {
+    return `${FALLBACK_SYSTEM_PROMPT}
+
+VOICE CONTEXT MODE:
+- Use the provided screen context when relevant.
+- Spoken response must be concise, conversational, and free of markdown or bullets.
+- Transcript may be slightly richer but still concise.
+- Return only valid JSON for voice_context requests.
+
+<screen_context>
+{{screenContext}}
+</screen_context>`;
+}
+
+async function handleVoiceTranscription(request, env, origin) {
+    const config = getSttConfig(env);
+    if (config.error) {
+        return new Response(JSON.stringify({ error: config.error }), {
+            status: 500,
+            headers: secureHeaders(origin)
+        });
+    }
+
+    try {
+        const inbound = await request.formData();
+        const audio = inbound.get('audio');
+        if (!audio || typeof audio === 'string') {
+            return new Response(JSON.stringify({ error: 'Missing audio' }), {
+                status: 400,
+                headers: secureHeaders(origin)
+            });
+        }
+
+        const form = new FormData();
+        form.append('file', audio, audio.name || 'voice.webm');
+        form.append('model', config.model);
+        form.append('response_format', 'json');
+
+        const sttResponse = await fetch(config.endpoint, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${config.apiKey}`
+            },
+            body: form
+        });
+
+        const data = await sttResponse.json().catch(() => ({}));
+        if (!sttResponse.ok) {
+            const message = data?.error?.message || data?.error || 'Transcription failed';
+            return new Response(JSON.stringify({ error: message }), {
+                status: sttResponse.status,
+                headers: secureHeaders(origin)
+            });
+        }
+
+        return new Response(JSON.stringify({
+            text: data.text || '',
+            languageHint: detectLanguageHint(data.text || '')
+        }), {
+            status: 200,
+            headers: secureHeaders(origin)
+        });
+    } catch (err) {
+        return new Response(JSON.stringify({ error: 'Transcription failed' }), {
+            status: 500,
+            headers: secureHeaders(origin)
+        });
+    }
+}
+
+async function handleVoiceTts(request, env, origin) {
+    const config = getTtsConfig(env);
+    if (config.error) {
+        return new Response(JSON.stringify({ error: config.error }), {
+            status: 501,
+            headers: secureHeaders(origin)
+        });
+    }
+
+    try {
+        const body = await request.json();
+        const text = typeof body.spoken === 'string'
+            ? body.spoken.replace(/[*_`#>-]/g, '').slice(0, 700)
+            : '';
+        if (!text) {
+            return new Response(JSON.stringify({ error: 'Missing spoken text' }), {
+                status: 400,
+                headers: secureHeaders(origin)
+            });
+        }
+
+        const ttsResponse = config.provider === 'elevenlabs'
+            ? await fetch(config.endpoint, {
+                method: 'POST',
+                headers: {
+                    'xi-api-key': config.apiKey,
+                    'Content-Type': 'application/json',
+                    'Accept': 'audio/mpeg'
+                },
+                body: JSON.stringify({
+                    text,
+                    model_id: config.model,
+                    voice_settings: {
+                        stability: 0.48,
+                        similarity_boost: 0.78,
+                        style: 0.18,
+                        use_speaker_boost: true
+                    }
+                })
+            })
+            : await fetch(config.endpoint, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${config.apiKey}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'audio/mpeg'
+                },
+                body: JSON.stringify({
+                    model: config.model,
+                    voice: config.voice,
+                    input: text
+                })
+            });
+
+        if (!ttsResponse.ok) {
+            return new Response(JSON.stringify({ error: 'TTS failed' }), {
+                status: ttsResponse.status,
+                headers: secureHeaders(origin)
+            });
+        }
+
+        return new Response(ttsResponse.body, {
+            status: 200,
+            headers: audioHeaders(origin, ttsResponse.headers.get('Content-Type') || 'audio/mpeg')
+        });
+    } catch (err) {
+        return new Response(JSON.stringify({ error: 'TTS failed' }), {
+            status: 500,
+            headers: secureHeaders(origin)
+        });
+    }
+}
+
+function getSttConfig(env) {
+    const provider = normalizeSpeechProvider(env.STT_PROVIDER || env.VOICE_STT_PROVIDER || DEFAULT_STT_PROVIDER);
+    const apiBaseUrl = trimTrailingSlash(env.STT_API_BASE_URL || env.OPENAI_API_BASE_URL || OPENAI_API_BASE_URL);
+
+    if (provider === 'openai' || provider === 'openai-compatible') {
+        const apiKey = env.STT_API_KEY || env.OPENAI_API_KEY;
+        if (!apiKey) return { error: 'Missing OPENAI_API_KEY or STT_API_KEY' };
+        return {
+            provider,
+            apiKey,
+            model: env.STT_MODEL || DEFAULT_OPENAI_STT_MODEL,
+            endpoint: `${apiBaseUrl}/audio/transcriptions`
+        };
+    }
+
+    if (provider === 'groq') {
+        const apiKey = env.STT_API_KEY || env.GROQ_API_KEY;
+        if (!apiKey) return { error: 'Missing GROQ_API_KEY or STT_API_KEY' };
+        return {
+            provider,
+            apiKey,
+            model: env.STT_MODEL || DEFAULT_GROQ_STT_MODEL,
+            endpoint: `${trimTrailingSlash(env.STT_API_BASE_URL || 'https://api.groq.com/openai/v1')}/audio/transcriptions`
+        };
+    }
+
+    return { error: `Unsupported STT_PROVIDER: ${provider}` };
+}
+
+function getTtsConfig(env) {
+    const provider = normalizeSpeechProvider(env.TTS_PROVIDER || env.VOICE_TTS_PROVIDER || DEFAULT_TTS_PROVIDER);
+    const apiBaseUrl = trimTrailingSlash(env.TTS_API_BASE_URL || env.OPENAI_API_BASE_URL || OPENAI_API_BASE_URL);
+
+    if (provider === 'openai' || provider === 'openai-compatible') {
+        const apiKey = env.TTS_API_KEY || env.OPENAI_API_KEY;
+        if (!apiKey) return { error: 'Missing OPENAI_API_KEY or TTS_API_KEY' };
+        return {
+            provider,
+            apiKey,
+            model: env.TTS_MODEL || DEFAULT_OPENAI_TTS_MODEL,
+            voice: env.TTS_VOICE || DEFAULT_OPENAI_TTS_VOICE,
+            endpoint: `${apiBaseUrl}/audio/speech`
+        };
+    }
+
+    if (provider === 'elevenlabs') {
+        const apiKey = env.TTS_API_KEY || env.ELEVENLABS_API_KEY;
+        if (!apiKey) return { error: 'Missing ELEVENLABS_API_KEY or TTS_API_KEY' };
+        const voice = env.TTS_VOICE || env.ELEVENLABS_VOICE_ID || DEFAULT_ELEVENLABS_VOICE_ID;
+        return {
+            provider,
+            apiKey,
+            model: env.TTS_MODEL || env.ELEVENLABS_TTS_MODEL || DEFAULT_ELEVENLABS_TTS_MODEL,
+            voice,
+            endpoint: `https://api.elevenlabs.io/v1/text-to-speech/${voice}`
+        };
+    }
+
+    return { error: `Unsupported TTS_PROVIDER: ${provider}` };
+}
+
+function normalizeSpeechProvider(provider) {
+    return String(provider || '').trim().toLowerCase().replace(/_/g, '-');
+}
+
+function trimTrailingSlash(value) {
+    return String(value || '').replace(/\/+$/, '');
+}
+
+function normalizeStructuredAssistantResponse(rawData) {
+    let content = '';
+    try {
+        const parsed = JSON.parse(rawData);
+        content = parsed?.choices?.[0]?.message?.content || '';
+    } catch (err) {
+        content = rawData;
+    }
+
+    const jsonText = extractJson(content);
+    let structured = null;
+    try {
+        structured = JSON.parse(jsonText);
+    } catch (err) {
+        const plain = content.replace(/[*_`#>-]/g, '').replace(/\s+/g, ' ').trim() || SAFE_RESPONSE;
+        return {
+            mode: 'voice_context',
+            inputLanguage: 'unknown',
+            outputLanguage: 'en',
+            spoken: plain.slice(0, 500),
+            transcript: content || SAFE_RESPONSE,
+            actions: [],
+            followups: []
+        };
+    }
+
+    const transcript = typeof structured.transcript === 'string'
+        ? structured.transcript.slice(0, 1200)
+        : (typeof structured.message === 'string' ? structured.message.slice(0, 1200) : SAFE_RESPONSE);
+    const spoken = typeof structured.spoken === 'string'
+        ? structured.spoken.replace(/[*_`#>-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 500)
+        : transcript.replace(/[*_`#>-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 500);
+
+    return {
+        mode: structured.mode === 'chat' ? 'chat' : 'voice_context',
+        inputLanguage: typeof structured.inputLanguage === 'string' ? structured.inputLanguage.slice(0, 16) : 'unknown',
+        outputLanguage: typeof structured.outputLanguage === 'string' ? structured.outputLanguage.slice(0, 16) : detectLanguageHint(transcript),
+        spoken,
+        transcript,
+        actions: normalizeActions(structured.actions),
+        followups: Array.isArray(structured.followups)
+            ? structured.followups.filter(item => typeof item === 'string').slice(0, 3)
+            : []
+    };
+}
+
+function extractJson(content) {
+    const trimmed = String(content || '').trim();
+    if (trimmed.startsWith('{')) return trimmed;
+    const match = trimmed.match(/\{[\s\S]*\}/);
+    return match ? match[0] : trimmed;
+}
+
+function normalizeActions(actions) {
+    if (!Array.isArray(actions)) return [];
+    return actions
+        .filter(action => action && ALLOWED_ACTION_TYPES.has(action.type) && ALLOWED_ACTION_TARGETS.has(action.target))
+        .slice(0, MAX_STRUCTURED_ACTIONS)
+        .map(action => ({
+            type: action.type,
+            target: action.target,
+            index: Number.isFinite(Number(action.index)) ? Number(action.index) : undefined
+        }));
+}
+
+function detectLanguageHint(text) {
+    return /[\u0900-\u097F]/.test(text) ? 'hi' : 'en';
 }
 
 // ================================================
@@ -401,7 +777,7 @@ function sanitizeResponse(rawData) {
 // Sends trace + generation data to Langfuse REST API
 // Runs in background via ctx.waitUntil() — never blocks the response
 // ================================================
-async function logToLangfuse(env, userIp, model, messages, responseData, startTime, promptVersion) {
+async function logToLangfuse(env, userIp, model, messages, responseData, startTime, promptVersion, promptName = LANGFUSE_PROMPT_NAME, extraMetadata = {}) {
     try {
         let parsed = {};
         try { parsed = JSON.parse(responseData); } catch (e) { /* non-JSON response */ }
@@ -445,7 +821,7 @@ async function logToLangfuse(env, userIp, model, messages, responseData, startTi
 
         // Link generation to Langfuse prompt version if available
         if (promptVersion && promptVersion !== 'fallback') {
-            generationBody.promptName = LANGFUSE_PROMPT_NAME;
+            generationBody.promptName = promptName;
             generationBody.promptVersion = promptVersion;
         }
 
@@ -465,7 +841,8 @@ async function logToLangfuse(env, userIp, model, messages, responseData, startTi
                         metadata: {
                             origin: 'cloudflare-worker',
                             model: model,
-                            promptVersion: promptVersion || 'legacy'
+                            promptVersion: promptVersion || 'legacy',
+                            ...extraMetadata
                         },
                         tags: ['portfolio', 'v1.3']
                     }

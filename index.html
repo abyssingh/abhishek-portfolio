@@ -878,6 +878,62 @@
             transform: scale(1.08);
         }
 
+        #chat-container.assistant-state-listening #chat-button,
+        #chat-container.assistant-state-recording #chat-button {
+            animation: voice-listening 1.1s ease-in-out infinite;
+        }
+
+        #chat-container.assistant-state-thinking #chat-button,
+        #chat-container.assistant-state-transcribing #chat-button {
+            animation: voice-thinking 1.4s ease-in-out infinite;
+        }
+
+        #chat-container.assistant-state-speaking #chat-button {
+            animation: voice-speaking 1s ease-in-out infinite;
+        }
+
+        #chat-container.assistant-mode-voice #chat-button {
+            box-shadow: 0 18px 46px rgba(20, 184, 166, 0.34);
+        }
+
+        @keyframes voice-listening {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.48);
+            }
+
+            50% {
+                transform: scale(1.06);
+                box-shadow: 0 0 0 18px rgba(20, 184, 166, 0);
+            }
+        }
+
+        @keyframes voice-thinking {
+            0%, 100% {
+                transform: scale(1);
+                filter: saturate(1);
+            }
+
+            50% {
+                transform: scale(0.96);
+                filter: saturate(1.35);
+            }
+        }
+
+        @keyframes voice-speaking {
+            0%, 100% {
+                transform: scale(1);
+            }
+
+            25% {
+                transform: scale(1.05, 0.96);
+            }
+
+            75% {
+                transform: scale(0.97, 1.05);
+            }
+        }
+
         #chat-window {
             width: 90vw;
             height: 80vh;
@@ -910,6 +966,10 @@
             display: flex;
         }
 
+        #chat-container.assistant-mode-voice #chat-window {
+            max-height: 560px;
+        }
+
         #chat-header {
             background: linear-gradient(135deg, rgba(0, 122, 255, 0.82), rgba(20, 184, 166, 0.76));
             color: white;
@@ -917,6 +977,19 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        .assistant-mode-toggle {
+            border: 1px solid rgba(255, 255, 255, 0.34);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.16);
+            color: white;
+            min-height: 34px;
+            padding: 0 12px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            cursor: pointer;
+            white-space: nowrap;
         }
 
         #chat-close-btn {
@@ -967,6 +1040,78 @@
             border-top: 1px solid var(--border);
             display: flex;
             gap: 8px;
+        }
+
+        .voice-guide-controls {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 1rem;
+            border-top: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        #chat-container.assistant-mode-voice .voice-guide-controls {
+            display: flex;
+        }
+
+        .voice-mic-button {
+            width: 46px;
+            height: 46px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: linear-gradient(135deg, #007aff, #14b8a6);
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            cursor: pointer;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+
+        .voice-mic-button:hover,
+        .voice-mic-button:focus-visible {
+            transform: translateY(-1px);
+            outline: none;
+        }
+
+        .voice-mic-button[disabled] {
+            cursor: not-allowed;
+            opacity: 0.52;
+        }
+
+        .voice-status-wrap {
+            min-width: 0;
+            display: grid;
+            gap: 2px;
+            font-size: 0.82rem;
+        }
+
+        #voice-status {
+            color: var(--text);
+            font-weight: 800;
+        }
+
+        #voice-support-note {
+            color: var(--muted);
+            line-height: 1.35;
+        }
+
+        [data-assistant-target].assistant-target-highlight {
+            animation: assistant-target-pulse 1.8s ease-in-out 2;
+            outline: 2px solid rgba(20, 184, 166, 0.72);
+            outline-offset: 6px;
+        }
+
+        @keyframes assistant-target-pulse {
+            0%, 100% {
+                box-shadow: 0 0 0 rgba(20, 184, 166, 0);
+            }
+
+            45% {
+                box-shadow: 0 0 0 12px rgba(20, 184, 166, 0.14);
+            }
         }
 
         #chat-input {
@@ -1310,6 +1455,17 @@
                 display: flex;
             }
 
+            #chat-container.assistant-mode-voice #chat-window {
+                top: auto;
+                height: min(72dvh, 620px);
+                border-radius: 28px 28px 0 0;
+                transform: translateY(100%);
+            }
+
+            #chat-container.assistant-mode-voice #chat-window.open {
+                transform: translateY(0);
+            }
+
             #chat-header {
                 padding-top: max(1rem, env(safe-area-inset-top));
             }
@@ -1371,7 +1527,7 @@
     <main id="homepage" class="page-shell hero">
         <section aria-labelledby="hero-title">
             <h1 id="hero-title">Building AI products that turn consumer intent into action.</h1>
-            <p class="hero-copy">
+            <p class="hero-copy" data-assistant-target="hero-brief">
                 Product Manager with 5.5 years at Jio across agentic AI assistants, voice-first onboarding, identity
                 platforms, and 100M+ download commerce apps.
             </p>
@@ -1395,7 +1551,7 @@
                 </div>
             </div>
             <div class="product-showcase-list" aria-label="Products built, scale, and status">
-                <article class="product-showcase-card" tabindex="0">
+                <article class="product-showcase-card" tabindex="0" data-assistant-target="product-ai-assistant">
                     <div class="product-identity">
                         <img src="./Reliance_Jio_Logo.svg.png" alt="Jio logo">
                         <div>
@@ -1411,7 +1567,7 @@
                             Bharat-scale workflows.</p>
                     </div>
                 </article>
-                <article class="product-showcase-card" tabindex="0">
+                <article class="product-showcase-card" tabindex="0" data-assistant-target="product-jioblackrock">
                     <div class="product-identity">
                         <img src="./jiofinance-logo.svg" alt="JioFinance logo">
                         <div>
@@ -1427,7 +1583,7 @@
                             analyzer flows.</p>
                     </div>
                 </article>
-                <article class="product-showcase-card" tabindex="0">
+                <article class="product-showcase-card" tabindex="0" data-assistant-target="product-jiomart">
                     <div class="product-identity">
                         <img src="./jiomart.png" alt="JioMart app logo">
                         <div>
@@ -1471,7 +1627,7 @@
         </div>
         <div class="carousel-shell">
             <div id="work-carousel" class="work-carousel" tabindex="0" aria-label="High-level work carousel">
-                <article class="work-card glass">
+                <article class="work-card glass" data-assistant-target="work-ai-assistant">
                     <div>
                         <div class="work-meta">
                             <span class="badge badge-glow"><span class="badge-dot" aria-hidden="true"></span>Agentic
@@ -1484,7 +1640,7 @@
                     </div>
                     <span class="badge">50% better use-case discovery</span>
                 </article>
-                <article class="work-card glass">
+                <article class="work-card glass" data-assistant-target="work-jioblackrock">
                     <div>
                         <div class="work-meta">
                             <span class="badge">FinTech</span>
@@ -1496,7 +1652,7 @@
                     </div>
                     <span class="badge">18% faster onboarding</span>
                 </article>
-                <article class="work-card glass">
+                <article class="work-card glass" data-assistant-target="work-jiomart">
                     <div>
                         <div class="work-meta">
                             <span class="badge">Commerce</span>
@@ -1522,10 +1678,10 @@
                 consumer-scale commerce performance.</p>
         </div>
         <div class="metrics-grid">
-            <div class="metric-tile glass"><strong>50%</strong><span>Improved AI use-case discovery</span></div>
-            <div class="metric-tile glass"><strong>25%</strong><span>Higher first-attempt onboarding completion</span></div>
-            <div class="metric-tile glass"><strong>16%</strong><span>Reduction in support tickets</span></div>
-            <div class="metric-tile glass"><strong>100M+</strong><span>Downloads across JioMart native app ownership</span></div>
+            <div class="metric-tile glass" data-assistant-target="metric-ai-discovery"><strong>50%</strong><span>Improved AI use-case discovery</span></div>
+            <div class="metric-tile glass" data-assistant-target="metric-onboarding"><strong>25%</strong><span>Higher first-attempt onboarding completion</span></div>
+            <div class="metric-tile glass" data-assistant-target="metric-support"><strong>16%</strong><span>Reduction in support tickets</span></div>
+            <div class="metric-tile glass" data-assistant-target="metric-commerce-scale"><strong>100M+</strong><span>Downloads across JioMart native app ownership</span></div>
         </div>
     </section>
 
@@ -1575,16 +1731,17 @@
     </section>
 
     <section id="contact" class="section page-shell">
-        <div class="contact-panel glass-strong">
+        <div class="contact-panel glass-strong" data-assistant-target="contact-panel">
             <div>
                 <div class="section-kicker">Contact</div>
                 <h2>Let's build the next high-impact product.</h2>
                 <p>Based in Navi Mumbai, working across AI, FinTech, commerce, and consumer platforms.</p>
             </div>
             <div class="contact-actions">
-                <a class="button button-primary" href="mailto:abhisheksingh9g@gmail.com">Email</a>
+                <a class="button button-primary" data-assistant-target="contact-email" href="mailto:abhisheksingh9g@gmail.com">Email</a>
                 <a class="button button-secondary" href="tel:+918425877338">Call</a>
                 <a class="button button-secondary"
+                    data-assistant-target="contact-resume"
                     href="https://drive.google.com/file/d/1UxEvuJcP4jp53CgeUulwFU0wB2zTH8Rg/view?usp=sharing"
                     target="_blank" rel="noopener noreferrer">Resume</a>
             </div>
@@ -1596,8 +1753,8 @@
     </footer>
 
     <div id="chat-container">
-        <button id="chat-button" aria-label="Open AI Assistant Chat">
-            <div class="chat-nudge">Chat with my AI</div>
+        <button id="chat-button" aria-label="Open Ask Abhishek Voice Guide">
+            <div class="chat-nudge">Ask Abhishek</div>
             <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                 aria-hidden="true">
@@ -1612,16 +1769,30 @@
                     <span id="chat-status-dot"
                         style="width:8px;height:8px;border-radius:50%;background:#4ade80;display:inline-block;"></span>
                 </div>
+                <button id="assistant-mode-toggle" class="assistant-mode-toggle" type="button">Voice Guide</button>
                 <button id="chat-close-btn" aria-label="Close chat">&times;</button>
             </div>
             <div id="chat-messages">
-                <div class="chat-bubble assistant">Hi! I'm Abhishek's AI assistant. Ask me anything about his
-                    experience, projects, skills, or GitHub activity.</div>
+                <div class="chat-bubble assistant">Hi! Ask me about Abhishek's experience, AI work, product areas, impact, or contact details.</div>
                 <div id="starter-questions" style="display:flex;flex-wrap:wrap;gap:6px;padding:4px 0;">
                     <button class="starter-btn" data-q="What is Abhishek's experience?">Experience</button>
                     <button class="starter-btn" data-q="Tell me about his projects and case studies">Projects</button>
                     <button class="starter-btn" data-q="What tools and skills does he have?">Skills & Tools</button>
                     <button class="starter-btn" data-q="How can I contact Abhishek?">Contact</button>
+                </div>
+            </div>
+            <div id="voice-guide-controls" class="voice-guide-controls" aria-live="polite">
+                <button id="voice-mic-btn" class="voice-mic-button" type="button" aria-label="Start voice input">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <path d="M12 19v3"></path>
+                    </svg>
+                </button>
+                <div class="voice-status-wrap">
+                    <span id="voice-status">Voice Guide ready</span>
+                    <span id="voice-support-note">Tap the mic and ask about Abhishek's work.</span>
                 </div>
             </div>
             <form id="chat-input-form">
@@ -1679,11 +1850,24 @@
             });
 
             const carousel = document.getElementById('work-carousel');
+            const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+            const getMotionBehavior = () => reducedMotion.matches ? 'auto' : 'smooth';
             const moveCarousel = (direction) => {
                 if (!carousel) return;
                 const firstCard = carousel.querySelector('.work-card');
                 const scrollAmount = firstCard ? firstCard.getBoundingClientRect().width + 18 : 360;
-                carousel.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+                carousel.scrollBy({ left: direction * scrollAmount, behavior: getMotionBehavior() });
+            };
+            const moveCarouselToIndex = (index) => {
+                if (!carousel) return;
+                const cards = Array.from(carousel.querySelectorAll('.work-card'));
+                const targetCard = cards[index];
+                if (!targetCard) return;
+                carousel.scrollTo({
+                    left: targetCard.offsetLeft - carousel.offsetLeft,
+                    behavior: getMotionBehavior()
+                });
+                assistantScreenContext.workCarouselIndex = index;
             };
             document.querySelector('[data-carousel-prev]')?.addEventListener('click', () => moveCarousel(-1));
             document.querySelector('[data-carousel-next]')?.addEventListener('click', () => moveCarousel(1));
@@ -1734,7 +1918,9 @@
                 if (openButton) renderProductDrawer(openButton);
             });
 
-            const PROXY_URL = 'https://ask-abhishek-proxy.abhisheksingh9g.workers.dev';
+            const PROXY_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                ? 'http://localhost:8787'
+                : 'https://ask-abhishek-proxy.abhisheksingh9g.workers.dev';
             const GITHUB_USER = 'abyssingh';
             const GITHUB_REPO = 'abhishek-portfolio';
             const KNOWLEDGE_FOLDER = 'knowledge';
@@ -1752,7 +1938,349 @@
             const chatForm = document.getElementById('chat-input-form');
             const chatInput = document.getElementById('chat-input');
             const starterQuestions = document.getElementById('starter-questions');
+            const chatContainer = document.getElementById('chat-container');
+            const modeToggle = document.getElementById('assistant-mode-toggle');
+            const voiceMicBtn = document.getElementById('voice-mic-btn');
+            const voiceStatus = document.getElementById('voice-status');
+            const voiceSupportNote = document.getElementById('voice-support-note');
             let isChatOpen = false;
+            let assistantMode = 'chat';
+            let assistantState = 'idle';
+            let mediaRecorder = null;
+            let mediaStream = null;
+            let audioContext = null;
+            let silenceTimer = null;
+            let recordingChunks = [];
+            let isRecording = false;
+            let currentAudioUrl = null;
+            const assistantScreenContext = {
+                currentSection: 'hero',
+                visibleTargets: [],
+                selectedProductCard: null,
+                workCarouselIndex: 0,
+                lastAssistantAction: null
+            };
+            const ASSISTANT_TARGETS = {
+                'section.hero': '#homepage',
+                'hero.brief': '[data-assistant-target="hero-brief"]',
+                'section.work': '#work',
+                'work.aiAssistant': '[data-assistant-target="work-ai-assistant"]',
+                'work.jioBlackRock': '[data-assistant-target="work-jioblackrock"]',
+                'work.jioMart': '[data-assistant-target="work-jiomart"]',
+                'product.aiAssistant': '[data-assistant-target="product-ai-assistant"]',
+                'product.jioBlackRock': '[data-assistant-target="product-jioblackrock"]',
+                'product.jioMart': '[data-assistant-target="product-jiomart"]',
+                'section.impact': '#impact',
+                'metric.aiDiscovery': '[data-assistant-target="metric-ai-discovery"]',
+                'metric.onboarding': '[data-assistant-target="metric-onboarding"]',
+                'metric.support': '[data-assistant-target="metric-support"]',
+                'metric.commerceScale': '[data-assistant-target="metric-commerce-scale"]',
+                'section.contact': '#contact',
+                'contact.panel': '[data-assistant-target="contact-panel"]',
+                'contact.email': '[data-assistant-target="contact-email"]',
+                'contact.resume': '[data-assistant-target="contact-resume"]'
+            };
+
+            const updateVoiceStatus = (status, note) => {
+                if (voiceStatus) voiceStatus.textContent = status;
+                if (voiceSupportNote && note) voiceSupportNote.textContent = note;
+            };
+
+            const setAssistantState = (state) => {
+                assistantState = state;
+                if (!chatContainer) return;
+                chatContainer.classList.remove(
+                    'assistant-state-idle',
+                    'assistant-state-listening',
+                    'assistant-state-recording',
+                    'assistant-state-transcribing',
+                    'assistant-state-thinking',
+                    'assistant-state-speaking',
+                    'assistant-state-acting',
+                    'assistant-state-error'
+                );
+                chatContainer.classList.add(`assistant-state-${state}`);
+            };
+
+            const setAssistantMode = (mode) => {
+                assistantMode = mode;
+                if (chatContainer) {
+                    chatContainer.classList.toggle('assistant-mode-voice', mode === 'voice_context');
+                }
+                if (modeToggle) {
+                    modeToggle.textContent = mode === 'voice_context' ? 'Switch to Chat' : 'Voice Guide';
+                }
+                if (chatInput) {
+                    chatInput.placeholder = mode === 'voice_context'
+                        ? 'Type or tap mic to ask...'
+                        : 'Ask about experience, projects, skills...';
+                }
+                if (mode === 'voice_context') {
+                    updateVoiceStatus(
+                        navigator.mediaDevices?.getUserMedia ? 'Voice Guide ready' : 'Voice fallback ready',
+                        navigator.mediaDevices?.getUserMedia
+                            ? "Tap the mic and ask about Abhishek's work."
+                            : 'Voice capture is not available here. Typing still works.'
+                    );
+                }
+            };
+
+            const getTargetElement = (target) => {
+                const selector = ASSISTANT_TARGETS[target];
+                return selector ? document.querySelector(selector) : null;
+            };
+
+            const highlightTarget = (target) => {
+                const element = getTargetElement(target);
+                if (!element) return false;
+                element.classList.remove('assistant-target-highlight');
+                requestAnimationFrame(() => element.classList.add('assistant-target-highlight'));
+                setTimeout(() => element.classList.remove('assistant-target-highlight'), 3600);
+                return true;
+            };
+
+            const executeAssistantActions = (actions = []) => {
+                const safeActions = actions.slice(0, 3);
+                if (!safeActions.length) return;
+                setAssistantState('acting');
+                safeActions.forEach((action) => {
+                    const element = getTargetElement(action.target);
+                    if (!element && action.type !== 'carouselTo') return;
+                    assistantScreenContext.lastAssistantAction = {
+                        type: action.type,
+                        target: action.target,
+                        previousScrollY: window.scrollY
+                    };
+                    if (action.type === 'scrollTo') {
+                        element.scrollIntoView({ behavior: getMotionBehavior(), block: 'center' });
+                    }
+                    if (action.type === 'highlight') {
+                        highlightTarget(action.target);
+                    }
+                    if (action.type === 'carouselTo') {
+                        moveCarouselToIndex(Number(action.index) || 0);
+                    }
+                    if (action.type === 'openDetails') {
+                        const detailButton = element.querySelector('.product-detail-toggle');
+                        if (detailButton?.getAttribute('aria-expanded') !== 'true') detailButton?.click();
+                    }
+                });
+                setTimeout(() => setAssistantState('idle'), 1000);
+            };
+
+            const inferLocalActions = (message) => {
+                const query = message.toLowerCase();
+                if (query.includes('contact') || query.includes('email') || query.includes('resume') || query.includes('call')) {
+                    return [
+                        { type: 'scrollTo', target: 'section.contact' },
+                        { type: 'highlight', target: 'contact.panel' }
+                    ];
+                }
+                if (query.includes('impact') || query.includes('metric') || query.includes('number') || query.includes('numbers')) {
+                    return [
+                        { type: 'scrollTo', target: 'section.impact' },
+                        { type: 'highlight', target: 'metric.aiDiscovery' },
+                        { type: 'highlight', target: 'metric.onboarding' }
+                    ];
+                }
+                if (query.includes('fintech') || query.includes('finance') || query.includes('blackrock')) {
+                    return [
+                        { type: 'scrollTo', target: 'section.work' },
+                        { type: 'carouselTo', target: 'work.jioBlackRock', index: 1 },
+                        { type: 'highlight', target: 'work.jioBlackRock' }
+                    ];
+                }
+                if (query.includes('ai') || query.includes('assistant') || query.includes('voice') || query.includes('llm')) {
+                    return [
+                        { type: 'scrollTo', target: 'section.work' },
+                        { type: 'carouselTo', target: 'work.aiAssistant', index: 0 },
+                        { type: 'highlight', target: 'work.aiAssistant' }
+                    ];
+                }
+                if (query.includes('experience') || query.includes('years') || query.includes('pm ') || query.includes('product management')) {
+                    return [
+                        { type: 'scrollTo', target: 'section.hero' },
+                        { type: 'highlight', target: 'hero.brief' }
+                    ];
+                }
+                if (query.includes('what am i looking') || query.includes('this section') || query.includes('current section')) {
+                    return [{ type: 'highlight', target: `section.${assistantScreenContext.currentSection}` }];
+                }
+                return [];
+            };
+
+            const getVisibleTargets = () => {
+                return Object.entries(ASSISTANT_TARGETS)
+                    .filter(([, selector]) => {
+                        const element = document.querySelector(selector);
+                        if (!element) return false;
+                        const rect = element.getBoundingClientRect();
+                        return rect.bottom > 0 && rect.top < window.innerHeight;
+                    })
+                    .map(([target]) => target);
+            };
+
+            const initScreenContext = () => {
+                const sectionMap = new Map([
+                    ['homepage', 'hero'],
+                    ['work', 'work'],
+                    ['impact', 'impact'],
+                    ['beyond', 'beyond'],
+                    ['contact', 'contact']
+                ]);
+                const observer = new IntersectionObserver((entries) => {
+                    const visible = entries
+                        .filter((entry) => entry.isIntersecting)
+                        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+                    if (visible?.target?.id) {
+                        assistantScreenContext.currentSection = sectionMap.get(visible.target.id) || 'hero';
+                    }
+                    assistantScreenContext.visibleTargets = getVisibleTargets();
+                }, { threshold: [0.32, 0.52, 0.72] });
+                sectionMap.forEach((_, id) => {
+                    const element = document.getElementById(id);
+                    if (element) observer.observe(element);
+                });
+                window.addEventListener('scroll', () => {
+                    assistantScreenContext.visibleTargets = getVisibleTargets();
+                }, { passive: true });
+            };
+
+            const getOutputLanguage = (text) => /[\u0900-\u097F]/.test(text) ? 'hi' : 'en';
+
+            const speakAssistantResponse = async (text, language) => {
+                if (assistantMode !== 'voice_context' || !text) return;
+                setAssistantState('speaking');
+                try {
+                    const response = await fetch(`${PROXY_URL}/voice/tts`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            spoken: text,
+                            outputLanguage: language
+                        })
+                    });
+                    if (response.ok) {
+                        const audioBlob = await response.blob();
+                        if (currentAudioUrl) URL.revokeObjectURL(currentAudioUrl);
+                        currentAudioUrl = URL.createObjectURL(audioBlob);
+                        const audio = new Audio(currentAudioUrl);
+                        audio.onended = () => setAssistantState('idle');
+                        audio.onerror = () => speakWithBrowserTts(text, language);
+                        await audio.play();
+                        return;
+                    }
+                } catch (error) {
+                    console.warn('[Voice] ElevenLabs playback fallback:', error.message);
+                }
+                speakWithBrowserTts(text, language);
+            };
+
+            const speakWithBrowserTts = (text, language) => {
+                if (!('speechSynthesis' in window)) {
+                    setAssistantState('idle');
+                    return;
+                }
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = language === 'hi' ? 'hi-IN' : 'en-IN';
+                utterance.rate = 0.96;
+                utterance.onstart = () => setAssistantState('speaking');
+                utterance.onend = () => setAssistantState('idle');
+                utterance.onerror = () => {
+                    setAssistantState('error');
+                    updateVoiceStatus('Speech unavailable', 'The transcript is still available.');
+                };
+                window.speechSynthesis.speak(utterance);
+            };
+
+            const startVoiceCapture = async () => {
+                if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+                    setAssistantState('error');
+                    updateVoiceStatus('Voice capture unavailable', 'Typing still works in Voice Guide.');
+                    return;
+                }
+                try {
+                    window.speechSynthesis?.cancel();
+                    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+                    recordingChunks = [];
+                    mediaRecorder = new MediaRecorder(mediaStream, { mimeType });
+                    mediaRecorder.ondataavailable = (event) => {
+                        if (event.data?.size) recordingChunks.push(event.data);
+                    };
+                    mediaRecorder.onstop = submitCapturedAudio;
+                    mediaRecorder.start();
+                    isRecording = true;
+                    setAssistantState('recording');
+                    updateVoiceStatus('Listening', 'I will stop automatically when you pause.');
+                    watchSilence(mediaStream);
+                } catch (error) {
+                    isRecording = false;
+                    setAssistantState('error');
+                    updateVoiceStatus('Mic permission needed', 'You can type your question instead.');
+                }
+            };
+
+            const stopVoiceCapture = () => {
+                if (!isRecording) return;
+                isRecording = false;
+                clearTimeout(silenceTimer);
+                if (mediaRecorder?.state !== 'inactive') mediaRecorder.stop();
+                mediaStream?.getTracks().forEach((track) => track.stop());
+                audioContext?.close().catch(() => {});
+                setAssistantState('transcribing');
+                updateVoiceStatus('Transcribing', 'Turning your voice into text.');
+            };
+
+            const watchSilence = (stream) => {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createMediaStreamSource(stream);
+                const analyser = audioContext.createAnalyser();
+                const data = new Uint8Array(analyser.fftSize);
+                source.connect(analyser);
+                const tick = () => {
+                    if (!isRecording) return;
+                    analyser.getByteTimeDomainData(data);
+                    const rms = Math.sqrt(data.reduce((sum, value) => {
+                        const normalized = (value - 128) / 128;
+                        return sum + normalized * normalized;
+                    }, 0) / data.length);
+                    if (rms < 0.018) {
+                        silenceTimer ||= setTimeout(stopVoiceCapture, 1250);
+                    } else {
+                        clearTimeout(silenceTimer);
+                        silenceTimer = null;
+                    }
+                    requestAnimationFrame(tick);
+                };
+                tick();
+            };
+
+            const submitCapturedAudio = async () => {
+                const blob = new Blob(recordingChunks, { type: mediaRecorder?.mimeType || 'audio/webm' });
+                if (!blob.size) {
+                    setAssistantState('error');
+                    updateVoiceStatus('No speech captured', 'Tap the mic and try again, or type your question.');
+                    return;
+                }
+                try {
+                    const formData = new FormData();
+                    formData.append('audio', blob, 'voice.webm');
+                    const response = await fetch(`${PROXY_URL}/voice/transcribe`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+                    const text = (data.text || '').trim();
+                    if (!response.ok || !text) throw new Error(data.error || 'No transcript');
+                    chatInput.value = text;
+                    handleUserMessage(text, 'voice');
+                } catch (error) {
+                    setAssistantState('error');
+                    updateVoiceStatus('Transcription failed', 'You can edit the text box or type manually.');
+                }
+            };
 
             async function fetchKnowledge() {
                 const cached = sessionStorage.getItem('askAbhishek_knowledge');
@@ -1826,42 +2354,78 @@
                     .join('\n\n');
             }
 
-            async function callGroq(userMessage) {
+            async function callGroq(userMessage, inputModality = 'text') {
                 if (!PROXY_URL) {
-                    return 'The AI assistant is not configured yet. In the meantime, feel free to explore the portfolio or reach out to Abhishek directly at abhisheksingh9g@gmail.com';
+                    return {
+                        transcript: 'The AI assistant is not configured yet. In the meantime, feel free to explore the portfolio or reach out to Abhishek directly at abhisheksingh9g@gmail.com',
+                        spoken: 'The AI assistant is not configured yet. You can still explore the portfolio or contact Abhishek directly.',
+                        actions: []
+                    };
                 }
 
                 const now = Date.now();
                 requestTimestamps = requestTimestamps.filter(t => now - t < 60000);
                 if (requestTimestamps.length >= CLIENT_RATE_LIMIT) {
-                    return "You're asking questions really fast! Please wait a moment before trying again.";
+                    return {
+                        transcript: "You're asking questions really fast! Please wait a moment before trying again.",
+                        spoken: "You're asking questions really fast. Please wait a moment.",
+                        actions: []
+                    };
                 }
                 requestTimestamps.push(now);
 
                 try {
-                    const response = await fetch(PROXY_URL, {
+                    const localActions = assistantMode === 'voice_context' ? inferLocalActions(userMessage) : [];
+                    const assistantUrl = assistantMode === 'voice_context' ? `${PROXY_URL}/assistant` : PROXY_URL;
+                    const response = await fetch(assistantUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             userMessage,
                             context: retrieveContext(userMessage),
-                            conversationHistory: conversationHistory.slice(-10)
+                            conversationHistory: conversationHistory.slice(-10),
+                            assistantMode,
+                            inputModality,
+                            screenContext: assistantScreenContext,
+                            responseContractVersion: 'voice_context_v1'
                         })
                     });
 
                     if (!response.ok) {
                         const errData = await response.json().catch(() => ({}));
                         if (response.status === 429) {
-                            return "I'm getting a lot of questions right now. Please try again in a moment!";
+                            return {
+                                transcript: "I'm getting a lot of questions right now. Please try again in a moment!",
+                                spoken: "I'm getting a lot of questions right now. Please try again in a moment.",
+                                actions: []
+                            };
                         }
                         throw new Error(errData.error?.message || `API error: ${response.status}`);
                     }
 
                     const data = await response.json();
-                    return data.choices?.[0]?.message?.content || "Sorry, I couldn't generate a response.";
+                    if (data.transcript || data.spoken || data.message) {
+                        return {
+                            transcript: data.transcript || data.message || data.spoken,
+                            spoken: data.spoken || data.transcript || data.message,
+                            actions: Array.isArray(data.actions) && data.actions.length ? data.actions : localActions,
+                            followups: Array.isArray(data.followups) ? data.followups : []
+                        };
+                    }
+                    const content = data.choices?.[0]?.message?.content || "Sorry, I couldn't generate a response.";
+                    return {
+                        transcript: content,
+                        spoken: content.replace(/[*_`#>-]/g, '').replace(/\s+/g, ' ').trim(),
+                        actions: localActions,
+                        followups: []
+                    };
                 } catch (err) {
                     console.error('[RAG] API error:', err);
-                    return "I'm having trouble connecting right now. Please try again in a moment, or reach out to Abhishek directly at abhisheksingh9g@gmail.com";
+                    return {
+                        transcript: "I'm having trouble connecting right now. Please try again in a moment, or reach out to Abhishek directly at abhisheksingh9g@gmail.com",
+                        spoken: "I'm having trouble connecting right now. Please try again in a moment.",
+                        actions: []
+                    };
                 }
             }
 
@@ -1921,30 +2485,59 @@
                 });
             }
 
+            modeToggle?.addEventListener('click', () => {
+                const nextMode = assistantMode === 'voice_context' ? 'chat' : 'voice_context';
+                setAssistantMode(nextMode);
+                appendMessage(nextMode === 'voice_context'
+                    ? 'Voice Guide is ready. You can tap the mic or keep typing.'
+                    : 'Chat mode is ready. I will keep responses structured and easy to copy.',
+                    'assistant'
+                );
+            });
+
+            voiceMicBtn?.addEventListener('click', () => {
+                if (isRecording) {
+                    stopVoiceCapture();
+                    return;
+                }
+                setAssistantMode('voice_context');
+                chatInput.value = '';
+                startVoiceCapture();
+            });
+
             chatForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 const msg = chatInput.value.trim();
                 if (!msg) return;
                 chatInput.value = '';
-                handleUserMessage(msg);
+                handleUserMessage(msg, 'text');
             });
 
-            async function handleUserMessage(message) {
+            async function handleUserMessage(message, inputModality = 'text') {
                 message = message.replace(/<[^>]*>/g, '').trim().slice(0, 500);
                 if (!message) return;
                 hideStarters();
                 appendMessage(message, 'user');
                 showLoader();
+                setAssistantState('thinking');
+                updateVoiceStatus('Thinking', 'Looking at the portfolio context.');
                 if (!knowledgeLoaded) await fetchKnowledge();
-                const response = await callGroq(message);
+                const response = await callGroq(message, inputModality);
                 hideLoader();
-                appendMessage(response, 'assistant');
+                appendMessage(response.transcript, 'assistant');
+                executeAssistantActions(response.actions);
+                speakAssistantResponse(response.spoken, getOutputLanguage(message));
                 conversationHistory.push({ role: 'user', content: message });
-                conversationHistory.push({ role: 'assistant', content: response });
+                conversationHistory.push({ role: 'assistant', content: response.transcript });
                 if (conversationHistory.length > 20) {
                     conversationHistory = conversationHistory.slice(-20);
                 }
+                updateVoiceStatus('Ready', 'Ask a follow-up or switch back to chat anytime.');
             }
+
+            initScreenContext();
+            setAssistantMode('voice_context');
+            setAssistantState('idle');
         });
     </script>
 </body>
