@@ -2076,8 +2076,24 @@
                 setTimeout(() => setAssistantState('idle'), 1000);
             };
 
+            const normalizeVoiceDomainTerms = (message) => {
+                let normalized = String(message || '');
+                const replacements = [
+                    [/\b(geo\s?math|geo\s?mart|geomath|geomart|gio\s?mart|jio\s?mart)\b/gi, 'JioMart'],
+                    [/\b(geo\s?black\s?rock|gio\s?black\s?rock|jio\s?black\s?rock|black\s?rock)\b/gi, 'JioBlackRock'],
+                    [/\b(geo\s?platforms|gio\s?platforms|jio\s?platforms)\b/gi, 'Jio Platforms'],
+                    [/\b(my\s?geo|my\s?gio|my\s?jio)\b/gi, 'MyJio'],
+                    [/\b(geo\s?finance|gio\s?finance|jio\s?finance)\b/gi, 'JioFinance'],
+                    [/\b(ai\s?smart\s?assistant|jio\s?assistant|geo\s?assistant|gio\s?assistant)\b/gi, 'AI Smart Assistant']
+                ];
+                replacements.forEach(([pattern, canonical]) => {
+                    normalized = normalized.replace(pattern, canonical);
+                });
+                return normalized.replace(/\s+/g, ' ').trim();
+            };
+
             const inferLocalActions = (message) => {
-                const query = message.toLowerCase();
+                const query = normalizeVoiceDomainTerms(message).toLowerCase();
                 if (query.includes('contact') || query.includes('email') || query.includes('resume') || query.includes('call')) {
                     return [
                         { type: 'scrollTo', target: 'section.contact' },
@@ -2422,7 +2438,7 @@
             };
 
             const appendRealtimeMessage = (content, sender) => {
-                const clean = String(content || '').replace(/\s+/g, ' ').trim();
+                const clean = normalizeVoiceDomainTerms(content);
                 if (!clean) return;
                 hideStarters();
                 appendMessage(clean, sender);
@@ -2450,7 +2466,7 @@
                 }
 
                 if (event.type === 'conversation.item.input_audio_transcription.completed') {
-                    const transcript = event.transcript || event.item?.content?.[0]?.transcript || '';
+                    const transcript = normalizeVoiceDomainTerms(event.transcript || event.item?.content?.[0]?.transcript || '');
                     appendRealtimeMessage(transcript, 'user');
                     executeAssistantActions(inferLocalActions(transcript));
                 }
