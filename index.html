@@ -2308,8 +2308,16 @@
             };
 
             const getFullKnowledgeContext = () => {
-                return knowledgeChunks
+                const portfolioVoiceFacts = `--- current-portfolio-voice-facts ---
+Abhishek Singh is a Product Manager with 5.5 years at Jio across agentic AI assistants, voice-first onboarding, identity platforms, fintech, and 100M+ download commerce apps.
+JioMart Native App: Abhishek was end-to-end owner for JioMart native Android and iOS app experience, core user journeys, app performance, discovery, checkout-related improvements, and commerce scale. The portfolio highlights 100M+ downloads across JioMart native app ownership.
+AI Smart Assistant: Abhishek is spearheading 0-to-1 agentic AI assistant strategy across MCP skills, voice-first journeys, tool discovery, evaluation, and Bharat-scale workflows. The 50% improved AI use-case discovery metric belongs to the AI Smart Assistant / agentic AI work.
+JioBlackRock: Abhishek worked on fintech onboarding, identity, consent, investment journey foundations, and financial product experiences.
+Training the long game: This is from the Beyond section. It means Abhishek's endurance and discipline outside work: Tata Mumbai Marathon finisher and training for Ladakh Half Marathon in Sep 2026.
+Experience answer: If asked how many years of Product Management experience Abhishek has, answer 5.5 years.`;
+                return [portfolioVoiceFacts, ...knowledgeChunks
                     .map(c => `--- ${c.filename} ---\n${c.content}`)
+                ]
                     .join('\n\n')
                     .slice(0, 24000);
             };
