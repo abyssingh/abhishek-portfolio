@@ -2349,6 +2349,17 @@ Experience answer: If asked how many years of Product Management experience Abhi
                 return 'en';
             };
 
+            const isPromptSeedTranscript = (text) => {
+                const value = String(text || '').toLowerCase();
+                const seedMatches = [
+                    'abhishek ne jiomart mein kya kiya',
+                    'abhishek ka experience kitna hai',
+                    'is metric ka kya matlab hai',
+                    'yeh number kis product ke liye hai'
+                ].filter(seed => value.includes(seed)).length;
+                return seedMatches >= 2;
+            };
+
             const logRealtimeClientEvent = (eventType, payload = {}) => {
                 if (!realtimeTraceId) return;
                 const body = JSON.stringify({
@@ -2544,6 +2555,12 @@ Experience answer: If asked how many years of Product Management experience Abhi
 
                 if (event.type === 'conversation.item.input_audio_transcription.completed') {
                     const transcript = normalizeVoiceDomainTerms(event.transcript || event.item?.content?.[0]?.transcript || '');
+                    if (isPromptSeedTranscript(transcript)) {
+                        logRealtimeClientEvent('transcription_ignored_prompt_seed', {
+                            input: transcript
+                        });
+                        return;
+                    }
                     realtimeDetectedLanguage = detectRealtimeLanguage(transcript);
                     appendRealtimeMessage(transcript, 'user');
                     executeAssistantActions(inferLocalActions(transcript));

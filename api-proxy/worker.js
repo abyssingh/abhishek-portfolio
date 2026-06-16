@@ -87,7 +87,7 @@ const DEFAULT_ELEVENLABS_TTS_MODEL = 'eleven_multilingual_v2';
 const DEFAULT_REALTIME_MODEL = 'gpt-realtime-2';
 const DEFAULT_REALTIME_VOICE = 'marin';
 const DEFAULT_REALTIME_TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe';
-const DEFAULT_REALTIME_TRANSCRIPTION_PROMPT = 'The visitor may speak Hindi, Hinglish, or Indian English from the first utterance. Preserve Hindi/Hinglish intent. Common phrases include: Abhishek ne JioMart mein kya kiya, Abhishek ka experience kitna hai, is metric ka kya matlab hai, yeh number kis product ke liye hai. Product names: Abhishek Singh, JioMart, JioBlackRock, Jio Platforms, MyJio, JioFinance, AI Smart Assistant, MCP, RAG, Langfuse. Correct close-sounding ASR like Geomart or Geomath to JioMart.';
+const DEFAULT_REALTIME_TRANSCRIPTION_PROMPT = 'Vocabulary hints only. Hindi, Hinglish, Indian English. Names and terms: Abhishek Singh, JioMart, JioBlackRock, Jio Platforms, MyJio, JioFinance, AI Smart Assistant, MCP, RAG, Langfuse, product management, support tickets, use-case discovery. Similar sounds: Geomart, Geomath, Geo Mart, Gio Mart mean JioMart.';
 
 // ================================================
 // FALLBACK SYSTEM PROMPT
