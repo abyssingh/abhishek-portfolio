@@ -1970,6 +1970,28 @@
             let realtimeSpeechStoppedAt = 0;
             let realtimeResponseStartedAt = 0;
             let realtimeDetectedLanguage = 'auto';
+            let liveVoiceEngine = 'openai_realtime';
+            let voiceBudgetSessionId = null;
+            let voiceBudgetRemainingMs = 120000;
+            let voiceBudgetLimitMs = 120000;
+            let voiceBudgetStartedAt = 0;
+            let voiceBudgetTimer = null;
+            let isVoiceBudgetExhausted = false;
+            let isSarvamVoiceActive = false;
+            let sarvamMediaStream = null;
+            let sarvamRecorder = null;
+            let sarvamRecordingChunks = [];
+            let sarvamAudioContext = null;
+            let sarvamAnalyser = null;
+            let sarvamVadFrame = null;
+            let sarvamSilenceTimer = null;
+            let sarvamIsRecording = false;
+            let sarvamTurnInFlight = false;
+            let sarvamCurrentAudio = null;
+            let sarvamCurrentAudioUrl = null;
+            let sarvamLastSpeechAt = 0;
+            let sarvamSpeechFrames = 0;
+            let sarvamPlaybackStartedAt = 0;
             const assistantScreenContext = {
                 currentSection: 'hero',
                 visibleTargets: [],
@@ -2020,6 +2042,72 @@
                 chatContainer.classList.add(`assistant-state-${state}`);
             };
 
+            const applyVoiceBudgetState = () => {
+                if (!voiceMicBtn) return;
+                voiceMicBtn.disabled = isVoiceBudgetExhausted;
+                if (isVoiceBudgetExhausted) {
+                    updateVoiceStatus('Voice limit reached', 'Voice preview limit reached for today. Chat still works.');
+                    voiceMicBtn.setAttribute('aria-label', 'Voice limit reached');
+                } else {
+                    voiceMicBtn.setAttribute('aria-label', isRealtimeActive || isSarvamVoiceActive ? 'Stop live voice' : 'Start live voice');
+                }
+            };
+
+            const loadVoiceConfig = async () => {
+                try {
+                    const response = await fetch(`${PROXY_URL}/voice/config`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({})
+                    });
+                    if (!response.ok) throw new Error(`config ${response.status}`);
+                    const data = await response.json();
+                    liveVoiceEngine = data.engine === 'sarvam_cascade' ? 'sarvam_cascade' : 'openai_realtime';
+                    voiceBudgetRemainingMs = Number(data.voiceBudgetRemainingMs || 0);
+                    voiceBudgetLimitMs = Number(data.voiceBudgetLimitMs || 120000);
+                    isVoiceBudgetExhausted = Boolean(data.voiceBudgetExhausted || voiceBudgetRemainingMs <= 0);
+                    applyVoiceBudgetState();
+                } catch (error) {
+                    liveVoiceEngine = 'openai_realtime';
+                    isVoiceBudgetExhausted = false;
+                    applyVoiceBudgetState();
+                }
+            };
+
+            const startVoiceBudgetCountdown = (remainingMs) => {
+                clearTimeout(voiceBudgetTimer);
+                voiceBudgetRemainingMs = Math.max(0, Number(remainingMs || voiceBudgetRemainingMs || voiceBudgetLimitMs));
+                voiceBudgetStartedAt = performance.now();
+                voiceBudgetTimer = setTimeout(() => {
+                    isVoiceBudgetExhausted = true;
+                    stopConfiguredVoiceSession(false, 'budget_exhausted');
+                    applyVoiceBudgetState();
+                    appendMessage('Voice preview limit reached for today. Chat still works.', 'assistant');
+                }, voiceBudgetRemainingMs);
+            };
+
+            const stopVoiceBudgetCountdown = () => {
+                clearTimeout(voiceBudgetTimer);
+                voiceBudgetTimer = null;
+                if (voiceBudgetStartedAt) {
+                    voiceBudgetRemainingMs = Math.max(0, voiceBudgetRemainingMs - (performance.now() - voiceBudgetStartedAt));
+                }
+                voiceBudgetStartedAt = 0;
+            };
+
+            const notifyVoiceBudgetStop = (engine, reason = 'client_stop') => {
+                if (!voiceBudgetSessionId) return;
+                const sessionId = voiceBudgetSessionId;
+                const traceId = realtimeTraceId || undefined;
+                voiceBudgetSessionId = null;
+                fetch(`${PROXY_URL}/voice/budget/stop`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId, engine, reason, traceId }),
+                    keepalive: true
+                }).catch(() => {});
+            };
+
             const setAssistantMode = (mode) => {
                 assistantMode = mode;
                 if (chatContainer) {
@@ -2034,12 +2122,18 @@
                         : 'Ask about experience, projects, skills...';
                 }
                 if (mode === 'voice_context') {
-                    updateVoiceStatus(
-                        navigator.mediaDevices?.getUserMedia && window.RTCPeerConnection ? 'Live Voice ready' : 'Voice fallback ready',
-                        navigator.mediaDevices?.getUserMedia
-                            ? 'Start once, then speak naturally. Interrupt anytime.'
-                            : 'Voice capture is not available here. Typing still works.'
-                    );
+                    if (isVoiceBudgetExhausted) {
+                        updateVoiceStatus('Voice limit reached', 'Voice preview limit reached for today. Chat still works.');
+                    } else {
+                        const engineLabel = liveVoiceEngine === 'sarvam_cascade' ? 'Sarvam Voice ready' : 'Live Voice ready';
+                        updateVoiceStatus(
+                            navigator.mediaDevices?.getUserMedia ? engineLabel : 'Voice fallback ready',
+                            navigator.mediaDevices?.getUserMedia
+                                ? 'Start once, then speak naturally. Interrupt anytime.'
+                                : 'Voice capture is not available here. Typing still works.'
+                        );
+                    }
+                    applyVoiceBudgetState();
                 }
             };
 
@@ -2216,7 +2310,7 @@
             const getOutputLanguage = (text) => /[\u0900-\u097F]/.test(text) ? 'hi' : 'en';
 
             const speakAssistantResponse = async (text, language) => {
-                if (assistantMode !== 'voice_context' || isRealtimeActive || !text) return;
+                if (assistantMode !== 'voice_context' || isRealtimeActive || isSarvamVoiceActive || isVoiceBudgetExhausted || !text) return;
                 setAssistantState('speaking');
                 try {
                     const response = await fetch(`${PROXY_URL}/voice/tts`, {
@@ -2435,6 +2529,11 @@ Experience answer: If asked how many years of Product Management experience Abhi
 
             const startRealtimeVoiceSession = async () => {
                 if (isRealtimeActive) return;
+                if (isVoiceBudgetExhausted) {
+                    updateVoiceStatus('Voice limit reached', 'Voice preview limit reached for today. Chat still works.');
+                    applyVoiceBudgetState();
+                    return;
+                }
                 if (!window.RTCPeerConnection || !navigator.mediaDevices?.getUserMedia) {
                     setAssistantState('error');
                     updateVoiceStatus('Live voice unavailable', 'Typing still works in Voice Guide.');
@@ -2498,6 +2597,10 @@ Experience answer: If asked how many years of Product Management experience Abhi
 
                     if (!response.ok) {
                         const errorData = await response.json().catch(() => ({}));
+                        if (response.status === 429 || errorData.voiceBudgetExhausted) {
+                            isVoiceBudgetExhausted = true;
+                            applyVoiceBudgetState();
+                        }
                         throw new Error(errorData.error || `Realtime failed: ${response.status}`);
                     }
 
@@ -2505,6 +2608,10 @@ Experience answer: If asked how many years of Product Management experience Abhi
                     realtimePromptName = response.headers.get('X-Realtime-Prompt-Name');
                     realtimePromptVersion = response.headers.get('X-Realtime-Prompt-Version');
                     realtimeModel = response.headers.get('X-Realtime-Model');
+                    voiceBudgetSessionId = response.headers.get('X-Voice-Budget-Session-Id');
+                    voiceBudgetRemainingMs = Number(response.headers.get('X-Voice-Budget-Remaining-Ms') || voiceBudgetRemainingMs);
+                    voiceBudgetLimitMs = Number(response.headers.get('X-Voice-Budget-Limit-Ms') || voiceBudgetLimitMs);
+                    startVoiceBudgetCountdown(voiceBudgetRemainingMs);
                     realtimeSessionStartedAt = performance.now();
                     await realtimePeerConnection.setRemoteDescription({
                         type: 'answer',
@@ -2520,11 +2627,14 @@ Experience answer: If asked how many years of Product Management experience Abhi
                     console.error('[Realtime Voice] start failed:', error);
                     stopRealtimeVoiceSession(false);
                     setAssistantState('error');
-                    updateVoiceStatus('Live voice failed', 'Please check Worker/OpenAI Realtime setup or use text chat.');
+                    updateVoiceStatus(
+                        isVoiceBudgetExhausted ? 'Voice limit reached' : 'Live voice failed',
+                        isVoiceBudgetExhausted ? 'Voice preview limit reached for today. Chat still works.' : 'Please check Worker/OpenAI Realtime setup or use text chat.'
+                    );
                 }
             };
 
-            const stopRealtimeVoiceSession = (showReady = true) => {
+            const stopRealtimeVoiceSession = (showReady = true, reason = 'client_stop') => {
                 isRealtimeActive = false;
                 clearTimeout(realtimeScreenContextTimer);
                 realtimeScreenContextTimer = null;
@@ -2536,8 +2646,10 @@ Experience answer: If asked how many years of Product Management experience Abhi
                 realtimeMediaStream = null;
                 if (realtimeRemoteAudio) realtimeRemoteAudio.srcObject = null;
                 logRealtimeClientEvent('session_stopped', {
-                    metadata: { stopped_by_user: showReady }
+                    metadata: { stopped_by_user: showReady, close_reason: reason }
                 });
+                stopVoiceBudgetCountdown();
+                notifyVoiceBudgetStop('openai_realtime', reason);
                 realtimeTraceId = null;
                 realtimePromptName = null;
                 realtimePromptVersion = null;
@@ -2546,8 +2658,12 @@ Experience answer: If asked how many years of Product Management experience Abhi
                 voiceMicBtn?.setAttribute('aria-label', 'Start live voice');
                 if (showReady) {
                     setAssistantState('idle');
-                    updateVoiceStatus('Live Voice paused', 'Start again when you want handsfree help.');
+                    updateVoiceStatus(
+                        isVoiceBudgetExhausted ? 'Voice limit reached' : 'Live Voice paused',
+                        isVoiceBudgetExhausted ? 'Voice preview limit reached for today. Chat still works.' : 'Start again when you want handsfree help.'
+                    );
                 }
+                applyVoiceBudgetState();
             };
 
             const appendRealtimeMessage = (content, sender) => {
@@ -2668,6 +2784,282 @@ Experience answer: If asked how many years of Product Management experience Abhi
                 } catch (error) {
                     console.warn('[Realtime Voice] ignored invalid action payload');
                 }
+            };
+
+            const startSarvamVoiceSession = async () => {
+                if (isSarvamVoiceActive) return;
+                if (isVoiceBudgetExhausted) {
+                    updateVoiceStatus('Voice limit reached', 'Voice preview limit reached for today. Chat still works.');
+                    applyVoiceBudgetState();
+                    return;
+                }
+                if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+                    setAssistantState('error');
+                    updateVoiceStatus('Voice capture unavailable', 'Typing still works in Voice Guide.');
+                    return;
+                }
+
+                try {
+                    setAssistantState('thinking');
+                    updateVoiceStatus('Starting Sarvam Voice', 'Opening a secure voice session.');
+                    if (!knowledgeLoaded) await fetchKnowledge();
+
+                    const budgetResponse = await fetch(`${PROXY_URL}/voice/budget/start`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ engine: 'sarvam_cascade' })
+                    });
+                    const budgetData = await budgetResponse.json().catch(() => ({}));
+                    if (!budgetResponse.ok) {
+                        if (budgetResponse.status === 429 || budgetData.voiceBudgetExhausted) {
+                            isVoiceBudgetExhausted = true;
+                            applyVoiceBudgetState();
+                        }
+                        throw new Error(budgetData.error || 'Voice budget unavailable');
+                    }
+
+                    voiceBudgetSessionId = budgetData.sessionId;
+                    voiceBudgetRemainingMs = Number(budgetData.remainingMs || voiceBudgetRemainingMs);
+                    voiceBudgetLimitMs = Number(budgetData.limitMs || voiceBudgetLimitMs);
+                    startVoiceBudgetCountdown(voiceBudgetRemainingMs);
+
+                    sarvamMediaStream = await navigator.mediaDevices.getUserMedia({
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true
+                        }
+                    });
+                    sarvamAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const source = sarvamAudioContext.createMediaStreamSource(sarvamMediaStream);
+                    sarvamAnalyser = sarvamAudioContext.createAnalyser();
+                    sarvamAnalyser.fftSize = 1024;
+                    source.connect(sarvamAnalyser);
+                    isSarvamVoiceActive = true;
+                    setAssistantState('live');
+                    updateVoiceStatus('Sarvam Voice on', 'Speak naturally. You can interrupt anytime.');
+                    applyVoiceBudgetState();
+                    sarvamVadLoop();
+                } catch (error) {
+                    console.error('[Sarvam Voice] start failed:', error);
+                    stopSarvamVoiceSession(false, isVoiceBudgetExhausted ? 'budget_exhausted' : 'start_failed');
+                    setAssistantState('error');
+                    updateVoiceStatus(
+                        isVoiceBudgetExhausted ? 'Voice limit reached' : 'Sarvam Voice failed',
+                        isVoiceBudgetExhausted ? 'Voice preview limit reached for today. Chat still works.' : 'Please check Worker/Sarvam setup or use text chat.'
+                    );
+                }
+            };
+
+            const sarvamVadLoop = () => {
+                if (!isSarvamVoiceActive || !sarvamAnalyser) return;
+                const data = new Uint8Array(sarvamAnalyser.fftSize);
+                sarvamAnalyser.getByteTimeDomainData(data);
+                const rms = Math.sqrt(data.reduce((sum, value) => {
+                    const normalized = (value - 128) / 128;
+                    return sum + normalized * normalized;
+                }, 0) / data.length);
+                const isSpeaking = rms > 0.025;
+                sarvamSpeechFrames = isSpeaking ? sarvamSpeechFrames + 1 : 0;
+                const sustainedSpeech = sarvamSpeechFrames >= 4;
+
+                if (sustainedSpeech) {
+                    sarvamLastSpeechAt = performance.now();
+                    if (assistantState === 'speaking' && performance.now() - sarvamPlaybackStartedAt > 450) {
+                        stopSarvamPlayback();
+                    }
+                    if (!sarvamIsRecording && !sarvamTurnInFlight) {
+                        startSarvamRecording();
+                    }
+                    clearTimeout(sarvamSilenceTimer);
+                    sarvamSilenceTimer = null;
+                } else if (sarvamIsRecording && !sarvamSilenceTimer) {
+                    sarvamSilenceTimer = setTimeout(() => {
+                        if (performance.now() - sarvamLastSpeechAt > 850) stopSarvamRecording();
+                    }, 900);
+                }
+
+                sarvamVadFrame = requestAnimationFrame(sarvamVadLoop);
+            };
+
+            const startSarvamRecording = () => {
+                if (!sarvamMediaStream || sarvamIsRecording) return;
+                const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+                sarvamRecordingChunks = [];
+                sarvamRecorder = new MediaRecorder(sarvamMediaStream, { mimeType });
+                sarvamRecorder.ondataavailable = (event) => {
+                    if (event.data?.size) sarvamRecordingChunks.push(event.data);
+                };
+                sarvamRecorder.onstop = submitSarvamAudioTurn;
+                sarvamRecorder.start(250);
+                sarvamIsRecording = true;
+                setAssistantState('listening');
+                updateVoiceStatus('Listening', 'Keep speaking naturally.');
+            };
+
+            const stopSarvamRecording = () => {
+                if (!sarvamIsRecording) return;
+                sarvamIsRecording = false;
+                clearTimeout(sarvamSilenceTimer);
+                sarvamSilenceTimer = null;
+                if (sarvamRecorder?.state !== 'inactive') sarvamRecorder.stop();
+                setAssistantState('thinking');
+                updateVoiceStatus('Thinking', 'Working from voice and portfolio context.');
+            };
+
+            const submitSarvamAudioTurn = async () => {
+                const blob = new Blob(sarvamRecordingChunks, { type: sarvamRecorder?.mimeType || 'audio/webm' });
+                if (!isSarvamVoiceActive || sarvamTurnInFlight || blob.size < 1200) {
+                    if (isSarvamVoiceActive) {
+                        setAssistantState('live');
+                        updateVoiceStatus('Sarvam Voice on', 'Ask a follow-up anytime.');
+                    }
+                    return;
+                }
+
+                sarvamTurnInFlight = true;
+                try {
+                    const formData = new FormData();
+                    formData.append('audio', blob, 'voice.webm');
+                    formData.append('budgetSessionId', voiceBudgetSessionId || '');
+                    formData.append('context', getFullKnowledgeContext());
+                    formData.append('conversationHistory', JSON.stringify(conversationHistory.slice(-8)));
+                    formData.append('screenContext', JSON.stringify(assistantScreenContext));
+
+                    const response = await fetch(`${PROXY_URL}/voice/sarvam/turn`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok) {
+                        if (response.status === 429 || data.voiceBudgetExhausted) {
+                            isVoiceBudgetExhausted = true;
+                            stopSarvamVoiceSession(false, 'budget_exhausted');
+                            applyVoiceBudgetState();
+                            appendMessage('Voice preview limit reached for today. Chat still works.', 'assistant');
+                            return;
+                        }
+                        throw new Error(data.error || 'Sarvam voice turn failed');
+                    }
+
+                    voiceBudgetRemainingMs = Number(data.voiceBudgetRemainingMs || voiceBudgetRemainingMs);
+                    const userText = normalizeVoiceDomainTerms(data.userText || '');
+                    if (userText) appendRealtimeMessage(userText, 'user');
+                    appendRealtimeMessage(data.transcript || data.spoken || '', 'assistant');
+                    executeAssistantActions(Array.isArray(data.actions) ? data.actions : inferLocalActions(userText));
+                    playSarvamAudio(data.audioBase64, data.audioContentType, data.spoken || data.transcript || '', data.languageCode);
+                } catch (error) {
+                    console.error('[Sarvam Voice] turn failed:', error);
+                    setAssistantState('error');
+                    updateVoiceStatus('Sarvam Voice issue', 'Typed chat still works.');
+                    setTimeout(() => {
+                        if (isSarvamVoiceActive && !isVoiceBudgetExhausted) {
+                            setAssistantState('live');
+                            updateVoiceStatus('Sarvam Voice on', 'Ask a follow-up anytime.');
+                        }
+                    }, 1400);
+                } finally {
+                    sarvamTurnInFlight = false;
+                }
+            };
+
+            const playSarvamAudio = (audioBase64, contentType, fallbackText, languageCode) => {
+                if (!isSarvamVoiceActive) return;
+                stopSarvamPlayback();
+                if (!audioBase64) {
+                    speakWithBrowserTts(fallbackText, sarvamLanguageFromCode(languageCode));
+                    return;
+                }
+                const binary = atob(audioBase64);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                const blob = new Blob([bytes], { type: contentType || 'audio/wav' });
+                sarvamCurrentAudioUrl = URL.createObjectURL(blob);
+                sarvamCurrentAudio = new Audio(sarvamCurrentAudioUrl);
+                sarvamCurrentAudio.onplay = () => {
+                    sarvamPlaybackStartedAt = performance.now();
+                    setAssistantState('speaking');
+                    updateVoiceStatus('Speaking', 'You can interrupt me anytime.');
+                };
+                sarvamCurrentAudio.onended = () => {
+                    stopSarvamPlayback(false);
+                    if (isSarvamVoiceActive && !isVoiceBudgetExhausted) {
+                        setAssistantState('live');
+                        updateVoiceStatus('Sarvam Voice on', 'Ask a follow-up anytime.');
+                    }
+                };
+                sarvamCurrentAudio.onerror = () => {
+                    stopSarvamPlayback(false);
+                    speakWithBrowserTts(fallbackText, sarvamLanguageFromCode(languageCode));
+                };
+                sarvamCurrentAudio.play().catch(() => speakWithBrowserTts(fallbackText, sarvamLanguageFromCode(languageCode)));
+            };
+
+            const stopSarvamPlayback = (clearState = true) => {
+                if (sarvamCurrentAudio) {
+                    sarvamCurrentAudio.pause();
+                    sarvamCurrentAudio.src = '';
+                    sarvamCurrentAudio = null;
+                }
+                if (sarvamCurrentAudioUrl) {
+                    URL.revokeObjectURL(sarvamCurrentAudioUrl);
+                    sarvamCurrentAudioUrl = null;
+                }
+                if (clearState && isSarvamVoiceActive && !sarvamTurnInFlight) {
+                    setAssistantState('live');
+                }
+            };
+
+            const sarvamLanguageFromCode = (code) => String(code || '').toLowerCase().startsWith('hi') ? 'hi' : 'en';
+
+            const stopSarvamVoiceSession = (showReady = true, reason = 'client_stop') => {
+                isSarvamVoiceActive = false;
+                stopSarvamPlayback(false);
+                clearTimeout(sarvamSilenceTimer);
+                sarvamSilenceTimer = null;
+                if (sarvamVadFrame) cancelAnimationFrame(sarvamVadFrame);
+                sarvamVadFrame = null;
+                if (sarvamRecorder?.state && sarvamRecorder.state !== 'inactive') {
+                    try { sarvamRecorder.stop(); } catch (error) { /* already stopped */ }
+                }
+                sarvamIsRecording = false;
+                sarvamTurnInFlight = false;
+                sarvamMediaStream?.getTracks().forEach((track) => track.stop());
+                sarvamMediaStream = null;
+                sarvamAudioContext?.close().catch(() => {});
+                sarvamAudioContext = null;
+                sarvamAnalyser = null;
+                sarvamSpeechFrames = 0;
+                sarvamPlaybackStartedAt = 0;
+                stopVoiceBudgetCountdown();
+                notifyVoiceBudgetStop('sarvam_cascade', reason);
+                applyVoiceBudgetState();
+                if (showReady) {
+                    setAssistantState('idle');
+                    updateVoiceStatus(
+                        isVoiceBudgetExhausted ? 'Voice limit reached' : 'Sarvam Voice paused',
+                        isVoiceBudgetExhausted ? 'Voice preview limit reached for today. Chat still works.' : 'Start again when you want handsfree help.'
+                    );
+                }
+            };
+
+            const startConfiguredVoiceSession = async () => {
+                await loadVoiceConfig();
+                if (isVoiceBudgetExhausted) {
+                    updateVoiceStatus('Voice limit reached', 'Voice preview limit reached for today. Chat still works.');
+                    applyVoiceBudgetState();
+                    return;
+                }
+                if (liveVoiceEngine === 'sarvam_cascade') {
+                    startSarvamVoiceSession();
+                } else {
+                    startRealtimeVoiceSession();
+                }
+            };
+
+            const stopConfiguredVoiceSession = (showReady = true, reason = 'client_stop') => {
+                if (isRealtimeActive) stopRealtimeVoiceSession(showReady, reason);
+                if (isSarvamVoiceActive) stopSarvamVoiceSession(showReady, reason);
             };
 
             async function fetchKnowledge() {
@@ -2858,7 +3250,7 @@ Experience answer: If asked how many years of Product Management experience Abhi
             });
 
             chatCloseBtn.addEventListener('click', () => {
-                stopRealtimeVoiceSession(false);
+                stopConfiguredVoiceSession(false, 'chat_closed');
                 isChatOpen = false;
                 chatWindow.classList.remove('open');
                 document.getElementById('chat-container').classList.remove('chat-active');
@@ -2876,7 +3268,7 @@ Experience answer: If asked how many years of Product Management experience Abhi
 
             modeToggle?.addEventListener('click', () => {
                 const nextMode = assistantMode === 'voice_context' ? 'chat' : 'voice_context';
-                if (nextMode === 'chat') stopRealtimeVoiceSession(false);
+                if (nextMode === 'chat') stopConfiguredVoiceSession(false, 'mode_switch');
                 setAssistantMode(nextMode);
                 appendMessage(nextMode === 'voice_context'
                     ? 'Live Voice is ready. Start once, then speak handsfree.'
@@ -2886,13 +3278,13 @@ Experience answer: If asked how many years of Product Management experience Abhi
             });
 
             voiceMicBtn?.addEventListener('click', () => {
-                if (isRealtimeActive) {
-                    stopRealtimeVoiceSession(true);
+                if (isRealtimeActive || isSarvamVoiceActive) {
+                    stopConfiguredVoiceSession(true, 'manual_stop');
                     return;
                 }
                 setAssistantMode('voice_context');
                 chatInput.value = '';
-                startRealtimeVoiceSession();
+                startConfiguredVoiceSession();
             });
 
             chatForm.addEventListener('submit', (e) => {
@@ -2941,6 +3333,7 @@ Experience answer: If asked how many years of Product Management experience Abhi
             initScreenContext();
             setAssistantMode('voice_context');
             setAssistantState('idle');
+            loadVoiceConfig();
         });
     </script>
 </body>

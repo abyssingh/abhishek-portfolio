@@ -39,10 +39,29 @@ Go to [dash.cloudflare.com](https://dash.cloudflare.com) → Sign up (free)
 
 ### Configure Speech Providers
 
-The context-aware Voice Guide uses OpenAI Realtime WebRTC for the primary handsfree voice experience. The older STT/TTS routes remain available as fallbacks/debug routes. The base chat LLM remains Groq unless changed separately in code.
+The context-aware Voice Guide supports two live voice engines behind Worker config:
+
+- `openai_realtime` — current OpenAI Realtime WebRTC speech-to-speech path.
+- `sarvam_cascade` — Sarvam STT + existing Groq/RAG assistant + Sarvam TTS.
+
+The base chat LLM remains Groq unless changed separately in code. Chat Mode is not limited by the voice budget.
+
+Voice budget:
+
+- `VOICE_DAILY_IP_BUDGET_MS`: optional, defaults to `120000`.
+- The 2-minute rolling daily budget applies to every Voice Mode engine per hashed IP.
+- After the budget is exhausted, Voice Mode is disabled and Chat Mode continues.
+- For production credit safety, bind the Durable Object below. Without it, local/manual testing uses a non-persistent in-memory fallback.
+
+Durable Object binding:
+
+- Class name: `VoiceBudgetDO`
+- Binding name: `VOICE_BUDGET`
+- Add a migration/new class entry for `VoiceBudgetDO` if deploying with Wrangler.
 
 Default realtime voice config:
 
+- `LIVE_VOICE_ENGINE`: `openai_realtime`
 - `REALTIME_MODEL`: `gpt-realtime-2`
 - `REALTIME_VOICE`: `marin`
 - `REALTIME_TRANSCRIPTION_MODEL`: `gpt-4o-mini-transcribe`
@@ -73,6 +92,13 @@ Optional overrides:
 
 Provider-specific optional secrets:
 
+- `SARVAM_API_KEY`: needed when `LIVE_VOICE_ENGINE=sarvam_cascade`, `STT_PROVIDER=sarvam`, or `TTS_PROVIDER=sarvam`
+- `SARVAM_STT_MODEL`: optional, defaults to `saaras:v3`
+- `SARVAM_STT_MODE`: optional, defaults to `codemix`
+- `SARVAM_STT_LANGUAGE`: optional, defaults to `unknown`
+- `SARVAM_TTS_MODEL`: optional, defaults to `bulbul:v3`
+- `SARVAM_TTS_SPEAKER`: optional, defaults to `shubh`
+- `SARVAM_TTS_OUTPUT_CODEC`: optional, defaults to `wav`
 - `ELEVENLABS_API_KEY`: only needed if `TTS_PROVIDER=elevenlabs`
 - `ELEVENLABS_VOICE_ID`: legacy alias for ElevenLabs voice override
 - `ELEVENLABS_TTS_MODEL`: legacy alias for ElevenLabs model override
@@ -89,6 +115,17 @@ POST /voice/realtime/session
 ```
 
 The browser sends its WebRTC SDP offer and screen/portfolio context to the Worker. The Worker keeps `OPENAI_API_KEY` private, calls OpenAI Realtime, and returns the SDP answer to the browser.
+
+Sarvam cascaded voice uses these Worker routes:
+
+```txt
+POST /voice/config
+POST /voice/budget/start
+POST /voice/sarvam/turn
+POST /voice/budget/stop
+```
+
+The browser keeps the microphone open, uses local VAD to segment utterances, and sends each utterance to `/voice/sarvam/turn`. The Worker keeps `SARVAM_API_KEY` private and returns the spoken transcript plus Sarvam audio.
 
 ### Langfuse Observability
 
