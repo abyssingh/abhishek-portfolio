@@ -1743,6 +1743,7 @@
                 <a class="button button-secondary" href="tel:+918425877338">Call</a>
                 <a class="button button-secondary"
                     data-assistant-target="contact-resume"
+                    data-download-url="https://drive.google.com/uc?export=download&id=1UxEvuJcP4jp53CgeUulwFU0wB2zTH8Rg"
                     href="https://drive.google.com/file/d/1UxEvuJcP4jp53CgeUulwFU0wB2zTH8Rg/view?usp=sharing"
                     target="_blank" rel="noopener noreferrer">Resume</a>
             </div>
@@ -2056,13 +2057,28 @@
                 return true;
             };
 
+            const triggerResumeDownload = () => {
+                const resumeLink = getTargetElement('contact.resume');
+                if (!resumeLink) return false;
+                const downloadUrl = resumeLink.dataset.downloadUrl || resumeLink.href;
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.download = 'Abhishek-Singh-Resume.pdf';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                return true;
+            };
+
             const executeAssistantActions = (actions = []) => {
                 const safeActions = actions.slice(0, 3);
                 if (!safeActions.length) return;
                 setAssistantState('acting');
                 safeActions.forEach((action) => {
                     const element = getTargetElement(action.target);
-                    if (!element && action.type !== 'carouselTo') return;
+                    if (!element && action.type !== 'carouselTo' && action.type !== 'downloadResume') return;
                     assistantScreenContext.lastAssistantAction = {
                         type: action.type,
                         target: action.target,
@@ -2080,6 +2096,9 @@
                     if (action.type === 'openDetails') {
                         const detailButton = element.querySelector('.product-detail-toggle');
                         if (detailButton?.getAttribute('aria-expanded') !== 'true') detailButton?.click();
+                    }
+                    if (action.type === 'downloadResume') {
+                        triggerResumeDownload();
                     }
                 });
                 setTimeout(() => setAssistantState('idle'), 1000);
@@ -2103,6 +2122,20 @@
 
             const inferLocalActions = (message) => {
                 const query = normalizeVoiceDomainTerms(message).toLowerCase();
+                if (
+                    query.includes('resume') ||
+                    query.includes('cv') ||
+                    query.includes('download profile') ||
+                    query.includes('download his profile') ||
+                    query.includes('show resume') ||
+                    query.includes('open resume')
+                ) {
+                    return [
+                        { type: 'scrollTo', target: 'section.contact' },
+                        { type: 'highlight', target: 'contact.resume' },
+                        { type: 'downloadResume', target: 'contact.resume' }
+                    ];
+                }
                 if (query.includes('contact') || query.includes('email') || query.includes('resume') || query.includes('call')) {
                     return [
                         { type: 'scrollTo', target: 'section.contact' },
@@ -2730,7 +2763,7 @@ Experience answer: If asked how many years of Product Management experience Abhi
                 requestTimestamps.push(now);
 
                 try {
-                    const localActions = assistantMode === 'voice_context' ? inferLocalActions(userMessage) : [];
+                    const localActions = inferLocalActions(userMessage);
                     const assistantUrl = assistantMode === 'voice_context' ? `${PROXY_URL}/assistant` : PROXY_URL;
                     const response = await fetch(assistantUrl, {
                         method: 'POST',
