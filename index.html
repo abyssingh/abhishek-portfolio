@@ -968,7 +968,17 @@
         }
 
         #chat-container.assistant-mode-voice #chat-window {
-            max-height: 560px;
+            width: min(520px, calc(100vw - 32px));
+            height: auto;
+            min-height: 0;
+            max-height: min(72vh, 560px);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(234, 247, 244, 0.7));
+            border-radius: 30px;
+        }
+
+        #chat-container.assistant-mode-voice.assistant-voice-live #chat-window {
+            width: min(640px, calc(100vw - 32px));
+            max-height: min(58vh, 420px);
         }
 
         #chat-header {
@@ -1056,6 +1066,67 @@
             display: flex;
         }
 
+        #chat-container.assistant-mode-voice #chat-header {
+            display: none;
+        }
+
+        #chat-container.assistant-mode-voice #chat-messages {
+            flex: 0 1 auto;
+            min-height: 112px;
+            max-height: 260px;
+            padding: 18px 20px 8px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.44), rgba(255, 255, 255, 0));
+        }
+
+        #chat-container.assistant-mode-voice.assistant-voice-live #chat-messages {
+            min-height: 88px;
+            max-height: 210px;
+            justify-content: flex-end;
+            -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 20%, #000 76%, transparent 100%);
+            mask-image: linear-gradient(180deg, transparent 0, #000 20%, #000 76%, transparent 100%);
+        }
+
+        #chat-container.assistant-mode-voice.assistant-captions-hidden #chat-messages {
+            display: none;
+        }
+
+        #chat-container.assistant-mode-voice .chat-bubble {
+            max-width: 100%;
+            border-radius: 22px;
+            background: transparent;
+            color: rgba(15, 23, 42, 0.86);
+            padding: 0;
+            font-size: clamp(1rem, 2vw, 1.35rem);
+            line-height: 1.55;
+            box-shadow: none;
+        }
+
+        #chat-container.assistant-mode-voice .chat-bubble.user {
+            align-self: flex-end;
+            max-width: 84%;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.72);
+        }
+
+        #chat-container.assistant-mode-voice .chat-bubble.assistant {
+            color: rgba(15, 23, 42, 0.82);
+        }
+
+        #chat-container.assistant-mode-voice #starter-questions {
+            display: none !important;
+        }
+
+        #chat-container.assistant-mode-voice #chat-input-form {
+            padding: 10px 18px 18px;
+            border-top: 0;
+            background: rgba(255, 255, 255, 0.24);
+        }
+
+        #chat-container.assistant-mode-voice.assistant-voice-live #chat-input-form {
+            display: none;
+        }
+
         .voice-mic-button {
             width: 46px;
             height: 46px;
@@ -1082,6 +1153,93 @@
             opacity: 0.52;
         }
 
+        #chat-container.assistant-voice-muted .voice-mic-button {
+            background: rgba(75, 85, 99, 0.74);
+            color: rgba(255, 255, 255, 0.86);
+        }
+
+        #chat-container.assistant-voice-muted .voice-mic-button::after {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 2px;
+            border-radius: 999px;
+            background: currentColor;
+            transform: rotate(-42deg);
+        }
+
+        .voice-orb-wrap {
+            position: absolute;
+            left: 50%;
+            bottom: 34px;
+            width: 92px;
+            height: 92px;
+            transform: translateX(-50%);
+            pointer-events: none;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #chat-container.assistant-mode-voice.assistant-voice-live .voice-orb-wrap {
+            display: flex;
+        }
+
+        .voice-orb-glow {
+            position: absolute;
+            inset: -22px;
+            border-radius: 999px;
+            background: radial-gradient(circle, rgba(245, 158, 11, 0.42), rgba(59, 130, 246, 0.18) 45%, rgba(236, 72, 153, 0.18) 68%, transparent 78%);
+            filter: blur(9px);
+            animation: voice-orb-glow 2.4s ease-in-out infinite;
+        }
+
+        .voice-orb-core {
+            position: relative;
+            width: 78px;
+            height: 78px;
+            border-radius: 999px;
+            background:
+                radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.75), transparent 18%),
+                conic-gradient(from 140deg, #111827, #2563eb, #22d3ee, #f59e0b, #ef4444, #111827);
+            box-shadow: inset 0 0 18px rgba(255, 255, 255, 0.28), 0 18px 46px rgba(15, 23, 42, 0.28);
+            animation: voice-orb-spin 7s linear infinite;
+        }
+
+        #chat-container.assistant-state-thinking .voice-orb-core,
+        #chat-container.assistant-state-transcribing .voice-orb-core {
+            animation-duration: 2.6s;
+            filter: saturate(0.9) brightness(0.82);
+        }
+
+        #chat-container.assistant-state-speaking .voice-orb-core {
+            animation-duration: 3.6s;
+            transform: scale(1.04);
+        }
+
+        #chat-container.assistant-voice-muted .voice-orb-core {
+            filter: grayscale(0.8) brightness(0.78);
+            animation-play-state: paused;
+        }
+
+        @keyframes voice-orb-spin {
+            to {
+                rotate: 360deg;
+            }
+        }
+
+        @keyframes voice-orb-glow {
+            0%, 100% {
+                opacity: 0.78;
+                transform: scale(0.96);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.04);
+            }
+        }
+
         .voice-status-wrap {
             min-width: 0;
             display: grid;
@@ -1097,6 +1255,110 @@
         #voice-support-note {
             color: var(--muted);
             line-height: 1.35;
+        }
+
+        #chat-container.assistant-mode-voice.assistant-voice-live .voice-guide-controls {
+            position: relative;
+            min-height: 160px;
+            padding: 86px 28px 18px;
+            justify-content: space-between;
+            background:
+                linear-gradient(180deg, rgba(226, 244, 255, 0), rgba(234, 219, 245, 0.66)),
+                radial-gradient(circle at 50% 54%, rgba(245, 158, 11, 0.26), transparent 36%);
+            border-top: 0;
+        }
+
+        .voice-control-cluster {
+            display: contents;
+        }
+
+        #chat-container.assistant-mode-voice.assistant-voice-live .voice-control-cluster {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1;
+        }
+
+        #chat-container.assistant-mode-voice.assistant-voice-live .voice-status-wrap {
+            position: absolute;
+            left: 50%;
+            bottom: 16px;
+            transform: translateX(-50%);
+            text-align: center;
+            min-width: 160px;
+        }
+
+        #chat-container.assistant-mode-voice.assistant-voice-live #voice-status {
+            font-size: 1.15rem;
+        }
+
+        #chat-container.assistant-mode-voice.assistant-voice-live #voice-support-note {
+            display: none;
+        }
+
+        #chat-container.assistant-mode-voice.assistant-voice-live .voice-mic-button,
+        .voice-secondary-button {
+            width: 58px;
+            height: 58px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.42);
+            background: rgba(31, 41, 55, 0.62);
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 18px 44px rgba(15, 23, 42, 0.2);
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 900;
+            flex: 0 0 auto;
+        }
+
+        .voice-secondary-button {
+            display: none;
+        }
+
+        #chat-container.assistant-mode-voice .voice-chat-button,
+        #chat-container.assistant-mode-voice .voice-close-button {
+            display: inline-flex;
+            width: 46px;
+            height: 46px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.42);
+            background: rgba(31, 41, 55, 0.62);
+            color: white;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        #chat-container.assistant-mode-voice .voice-close-button {
+            font-size: 1.7rem;
+            font-weight: 400;
+        }
+
+        #chat-container.assistant-mode-voice.assistant-voice-live .voice-secondary-button {
+            display: inline-flex;
+        }
+
+        #chat-container.assistant-mode-voice.assistant-voice-live .voice-close-button {
+            font-size: 2rem;
+            font-weight: 400;
+            background: transparent;
+            color: rgba(15, 23, 42, 0.82);
+            box-shadow: none;
+            border-color: transparent;
+        }
+
+        #chat-container.assistant-mode-voice.assistant-voice-live .voice-caption-button {
+            width: 38px;
+            height: 38px;
+            align-self: flex-end;
+            font-size: 0.72rem;
+        }
+
+        #chat-container.assistant-captions-hidden #voice-captions-btn {
+            opacity: 0.52;
         }
 
         [data-assistant-target].assistant-target-highlight {
@@ -1458,13 +1720,77 @@
 
             #chat-container.assistant-mode-voice #chat-window {
                 top: auto;
-                height: min(72dvh, 620px);
+                height: auto;
+                min-height: 300px;
+                max-height: min(58dvh, 480px);
                 border-radius: 28px 28px 0 0;
                 transform: translateY(100%);
             }
 
             #chat-container.assistant-mode-voice #chat-window.open {
                 transform: translateY(0);
+            }
+
+            #chat-container.assistant-mode-voice.assistant-voice-live #chat-window {
+                left: 0;
+                right: 0;
+                bottom: 0;
+                width: 100vw;
+                height: auto;
+                max-height: min(56dvh, 460px);
+                min-height: 270px;
+                border-radius: 30px 30px 0 0;
+                background:
+                    linear-gradient(180deg, rgba(244, 251, 255, 0.7), rgba(235, 219, 244, 0.84)),
+                    radial-gradient(circle at 50% 78%, rgba(245, 158, 11, 0.26), transparent 38%);
+            }
+
+            #chat-container.assistant-mode-voice #chat-messages {
+                min-height: 86px;
+                max-height: 152px;
+                padding: 16px 22px 0;
+            }
+
+            #chat-container.assistant-mode-voice .voice-guide-controls {
+                min-height: 92px;
+                padding: 14px 18px;
+            }
+
+            #chat-container.assistant-mode-voice.assistant-voice-live #chat-messages {
+                min-height: 92px;
+                max-height: 160px;
+                padding: 18px 28px 0;
+            }
+
+            #chat-container.assistant-mode-voice.assistant-voice-live .chat-bubble {
+                font-size: 1.05rem;
+                line-height: 1.48;
+            }
+
+            #chat-container.assistant-mode-voice.assistant-voice-live .voice-guide-controls {
+                min-height: 178px;
+                padding: 92px 24px max(24px, env(safe-area-inset-bottom));
+            }
+
+            #chat-container.assistant-mode-voice.assistant-voice-live .voice-orb-wrap {
+                bottom: 48px;
+                width: 104px;
+                height: 104px;
+            }
+
+            #chat-container.assistant-mode-voice.assistant-voice-live .voice-orb-core {
+                width: 88px;
+                height: 88px;
+            }
+
+            #chat-container.assistant-mode-voice.assistant-voice-live .voice-mic-button,
+            #chat-container.assistant-mode-voice.assistant-voice-live .voice-secondary-button {
+                width: 62px;
+                height: 62px;
+            }
+
+            #chat-container.assistant-mode-voice.assistant-voice-live .voice-status-wrap {
+                bottom: 12px;
             }
 
             #chat-header {
@@ -1784,17 +2110,34 @@
                 </div>
             </div>
             <div id="voice-guide-controls" class="voice-guide-controls" aria-live="polite">
-                <button id="voice-mic-btn" class="voice-mic-button" type="button" aria-label="Start live voice">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                        <path d="M12 19v3"></path>
-                    </svg>
-                </button>
+                <div class="voice-orb-wrap" aria-hidden="true">
+                    <span class="voice-orb-glow"></span>
+                    <span class="voice-orb-core"></span>
+                </div>
+                <div class="voice-control-cluster voice-control-left">
+                    <button id="voice-mic-btn" class="voice-mic-button" type="button" aria-label="Start live voice">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                            <path d="M12 19v3"></path>
+                        </svg>
+                    </button>
+                    <button id="voice-captions-btn" class="voice-secondary-button voice-caption-button" type="button" aria-pressed="true" aria-label="Toggle transcript captions">CC</button>
+                </div>
                 <div class="voice-status-wrap">
                     <span id="voice-status">Live Voice ready</span>
                     <span id="voice-support-note">Start once, then speak handsfree.</span>
+                </div>
+                <div class="voice-control-cluster voice-control-right">
+                    <button id="voice-chat-btn" class="voice-secondary-button voice-chat-button" type="button" aria-label="Switch to chat mode">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+                            <path d="M7 9h.01M11 9h.01M15 9h.01M7 13h.01M11 13h.01M15 13h.01M8 17h8"></path>
+                        </svg>
+                    </button>
+                    <button id="voice-close-btn" class="voice-secondary-button voice-close-button" type="button" aria-label="Close live voice">×</button>
                 </div>
             </div>
             <form id="chat-input-form">
@@ -1943,11 +2286,16 @@
             const chatContainer = document.getElementById('chat-container');
             const modeToggle = document.getElementById('assistant-mode-toggle');
             const voiceMicBtn = document.getElementById('voice-mic-btn');
+            const voiceCloseBtn = document.getElementById('voice-close-btn');
+            const voiceCaptionsBtn = document.getElementById('voice-captions-btn');
+            const voiceChatBtn = document.getElementById('voice-chat-btn');
             const voiceStatus = document.getElementById('voice-status');
             const voiceSupportNote = document.getElementById('voice-support-note');
             let isChatOpen = false;
             let assistantMode = 'chat';
             let assistantState = 'idle';
+            let isVoiceInputMuted = false;
+            let areVoiceCaptionsVisible = true;
             let mediaRecorder = null;
             let mediaStream = null;
             let audioContext = null;
@@ -1987,6 +2335,7 @@
             let sarvamSilenceTimer = null;
             let sarvamIsRecording = false;
             let sarvamTurnInFlight = false;
+            let sarvamDiscardNextTurn = false;
             let sarvamCurrentAudio = null;
             let sarvamCurrentAudioUrl = null;
             let sarvamLastSpeechAt = 0;
@@ -2025,6 +2374,26 @@
                 if (voiceSupportNote && note) voiceSupportNote.textContent = note;
             };
 
+            const isLiveVoiceActive = () => isRealtimeActive || isSarvamVoiceActive;
+
+            const syncVoiceShellState = () => {
+                if (!chatContainer) return;
+                const live = isLiveVoiceActive();
+                chatContainer.classList.toggle('assistant-voice-live', assistantMode === 'voice_context' && live);
+                chatContainer.classList.toggle('assistant-voice-muted', assistantMode === 'voice_context' && isVoiceInputMuted);
+                chatContainer.classList.toggle('assistant-captions-hidden', assistantMode === 'voice_context' && !areVoiceCaptionsVisible);
+                if (voiceCaptionsBtn) {
+                    voiceCaptionsBtn.setAttribute('aria-pressed', String(areVoiceCaptionsVisible));
+                }
+                if (voiceMicBtn && !isVoiceBudgetExhausted) {
+                    if (live) {
+                        voiceMicBtn.setAttribute('aria-label', isVoiceInputMuted ? 'Unmute microphone' : 'Mute microphone');
+                    } else {
+                        voiceMicBtn.setAttribute('aria-label', 'Start live voice');
+                    }
+                }
+            };
+
             const setAssistantState = (state) => {
                 assistantState = state;
                 if (!chatContainer) return;
@@ -2040,6 +2409,7 @@
                     'assistant-state-error'
                 );
                 chatContainer.classList.add(`assistant-state-${state}`);
+                syncVoiceShellState();
             };
 
             const applyVoiceBudgetState = () => {
@@ -2049,8 +2419,11 @@
                     updateVoiceStatus('Voice limit reached', 'Voice preview limit reached for today. Chat still works.');
                     voiceMicBtn.setAttribute('aria-label', 'Voice limit reached');
                 } else {
-                    voiceMicBtn.setAttribute('aria-label', isRealtimeActive || isSarvamVoiceActive ? 'Stop live voice' : 'Start live voice');
+                    voiceMicBtn.setAttribute('aria-label', isLiveVoiceActive()
+                        ? (isVoiceInputMuted ? 'Unmute microphone' : 'Mute microphone')
+                        : 'Start live voice');
                 }
+                syncVoiceShellState();
             };
 
             const loadVoiceConfig = async () => {
@@ -2114,6 +2487,34 @@
                 }).catch(() => {});
             };
 
+            const setVoiceInputMuted = (muted, reason = 'manual') => {
+                isVoiceInputMuted = Boolean(muted);
+                realtimeMediaStream?.getAudioTracks().forEach((track) => {
+                    track.enabled = !isVoiceInputMuted;
+                });
+                sarvamMediaStream?.getAudioTracks().forEach((track) => {
+                    track.enabled = !isVoiceInputMuted;
+                });
+                if (isVoiceInputMuted && sarvamIsRecording) {
+                    sarvamDiscardNextTurn = true;
+                    stopSarvamRecording();
+                }
+                if (isLiveVoiceActive()) {
+                    updateVoiceStatus(
+                        isVoiceInputMuted ? 'Muted' : (assistantState === 'speaking' ? 'Speaking' : 'Listening'),
+                        isVoiceInputMuted ? 'Tap the mic to unmute. Chat still works.' : 'Speak naturally. You can interrupt anytime.'
+                    );
+                }
+                syncVoiceShellState();
+                if (isRealtimeActive) {
+                    logRealtimeClientEvent(isVoiceInputMuted ? 'mic_muted' : 'mic_unmuted', { metadata: { reason } });
+                }
+            };
+
+            const toggleVoiceInputMuted = () => {
+                setVoiceInputMuted(!isVoiceInputMuted, 'manual_toggle');
+            };
+
             const setAssistantMode = (mode) => {
                 assistantMode = mode;
                 if (chatContainer) {
@@ -2141,6 +2542,7 @@
                     }
                     applyVoiceBudgetState();
                 }
+                syncVoiceShellState();
             };
 
             const getTargetElement = (target) => {
@@ -2559,6 +2961,8 @@ Experience answer: If asked how many years of Product Management experience Abhi
                     setAssistantState('thinking');
                     updateVoiceStatus('Starting live voice', 'Opening a secure realtime session.');
                     window.speechSynthesis?.cancel();
+                    isVoiceInputMuted = false;
+                    syncVoiceShellState();
                     if (!knowledgeLoaded) await fetchKnowledge();
 
                     realtimeMediaStream = await navigator.mediaDevices.getUserMedia({
@@ -2582,9 +2986,9 @@ Experience answer: If asked how many years of Product Management experience Abhi
                     realtimeDataChannel = realtimePeerConnection.createDataChannel('oai-events');
                     realtimeDataChannel.onopen = () => {
                         isRealtimeActive = true;
+                        setVoiceInputMuted(false, 'session_start');
                         setAssistantState('live');
                         updateVoiceStatus('Live Voice on', 'Speak naturally. You can interrupt anytime.');
-                        voiceMicBtn?.setAttribute('aria-label', 'Stop live voice');
                         queueRealtimeScreenContextUpdate();
                     };
                     realtimeDataChannel.onmessage = (event) => handleRealtimeEvent(event);
@@ -2670,7 +3074,7 @@ Experience answer: If asked how many years of Product Management experience Abhi
                 realtimePromptVersion = null;
                 realtimeModel = null;
                 realtimeDetectedLanguage = 'auto';
-                voiceMicBtn?.setAttribute('aria-label', 'Start live voice');
+                isVoiceInputMuted = false;
                 if (showReady) {
                     setAssistantState('idle');
                     updateVoiceStatus(
@@ -2817,6 +3221,8 @@ Experience answer: If asked how many years of Product Management experience Abhi
                 try {
                     setAssistantState('thinking');
                     updateVoiceStatus('Starting Sarvam Voice', 'Opening a secure voice session.');
+                    isVoiceInputMuted = false;
+                    syncVoiceShellState();
                     if (!knowledgeLoaded) await fetchKnowledge();
 
                     const budgetResponse = await fetch(`${PROXY_URL}/voice/budget/start`, {
@@ -2851,6 +3257,7 @@ Experience answer: If asked how many years of Product Management experience Abhi
                     sarvamAnalyser.fftSize = 1024;
                     source.connect(sarvamAnalyser);
                     isSarvamVoiceActive = true;
+                    setVoiceInputMuted(false, 'session_start');
                     setAssistantState('live');
                     updateVoiceStatus('Sarvam Voice on', 'Speak naturally. You can interrupt anytime.');
                     applyVoiceBudgetState();
@@ -2868,6 +3275,13 @@ Experience answer: If asked how many years of Product Management experience Abhi
 
             const sarvamVadLoop = () => {
                 if (!isSarvamVoiceActive || !sarvamAnalyser) return;
+                if (isVoiceInputMuted) {
+                    sarvamSpeechFrames = 0;
+                    clearTimeout(sarvamSilenceTimer);
+                    sarvamSilenceTimer = null;
+                    sarvamVadFrame = requestAnimationFrame(sarvamVadLoop);
+                    return;
+                }
                 const data = new Uint8Array(sarvamAnalyser.fftSize);
                 sarvamAnalyser.getByteTimeDomainData(data);
                 const rms = Math.sqrt(data.reduce((sum, value) => {
@@ -2924,6 +3338,15 @@ Experience answer: If asked how many years of Product Management experience Abhi
 
             const submitSarvamAudioTurn = async () => {
                 const blob = new Blob(sarvamRecordingChunks, { type: sarvamRecorder?.mimeType || 'audio/webm' });
+                if (sarvamDiscardNextTurn) {
+                    sarvamDiscardNextTurn = false;
+                    sarvamRecordingChunks = [];
+                    if (isSarvamVoiceActive) {
+                        setAssistantState('live');
+                        updateVoiceStatus(isVoiceInputMuted ? 'Muted' : 'Sarvam Voice on', isVoiceInputMuted ? 'Tap the mic to unmute.' : 'Ask a follow-up anytime.');
+                    }
+                    return;
+                }
                 if (!isSarvamVoiceActive || sarvamTurnInFlight || blob.size < 1200) {
                     if (isSarvamVoiceActive) {
                         setAssistantState('live');
@@ -3049,6 +3472,8 @@ Experience answer: If asked how many years of Product Management experience Abhi
                 sarvamAnalyser = null;
                 sarvamSpeechFrames = 0;
                 sarvamPlaybackStartedAt = 0;
+                sarvamDiscardNextTurn = false;
+                isVoiceInputMuted = false;
                 stopVoiceBudgetCountdown();
                 notifyVoiceBudgetStop('sarvam_cascade', reason);
                 applyVoiceBudgetState();
@@ -3260,9 +3685,11 @@ Experience answer: If asked how many years of Product Management experience Abhi
                 chatWindow.classList.toggle('open', isChatOpen);
                 document.getElementById('chat-container').classList.toggle('chat-active', isChatOpen);
                 if (isChatOpen) {
+                    setAssistantMode('voice_context');
                     chatWindow.style.display = 'flex';
                     if (!knowledgeLoaded) await fetchKnowledge();
                 } else {
+                    stopConfiguredVoiceSession(false, 'panel_collapsed');
                     setTimeout(() => chatWindow.style.display = 'none', 300);
                 }
             });
@@ -3296,13 +3723,36 @@ Experience answer: If asked how many years of Product Management experience Abhi
             });
 
             voiceMicBtn?.addEventListener('click', () => {
-                if (isRealtimeActive || isSarvamVoiceActive) {
-                    stopConfiguredVoiceSession(true, 'manual_stop');
+                if (isLiveVoiceActive()) {
+                    toggleVoiceInputMuted();
                     return;
                 }
                 setAssistantMode('voice_context');
                 chatInput.value = '';
                 startConfiguredVoiceSession();
+            });
+
+            voiceCloseBtn?.addEventListener('click', () => {
+                stopConfiguredVoiceSession(false, 'voice_close');
+                isChatOpen = false;
+                chatWindow.classList.remove('open');
+                chatContainer?.classList.remove('chat-active');
+                setTimeout(() => chatWindow.style.display = 'none', 260);
+            });
+
+            voiceCaptionsBtn?.addEventListener('click', () => {
+                areVoiceCaptionsVisible = !areVoiceCaptionsVisible;
+                syncVoiceShellState();
+            });
+
+            voiceChatBtn?.addEventListener('click', () => {
+                stopConfiguredVoiceSession(false, 'voice_chat_toggle');
+                setAssistantMode('chat');
+                isChatOpen = true;
+                chatWindow.style.display = 'flex';
+                chatWindow.classList.add('open');
+                chatContainer?.classList.add('chat-active');
+                chatInput?.focus();
             });
 
             chatForm.addEventListener('submit', (e) => {
