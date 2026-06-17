@@ -572,7 +572,7 @@ async function handleVoiceBudgetStop(request, env, origin, ip, ctx) {
 
 function getLiveVoiceEngine(env) {
     const engine = String(env.LIVE_VOICE_ENGINE || DEFAULT_LIVE_VOICE_ENGINE).trim().toLowerCase();
-    return engine === 'sarvam_cascade' ? 'sarvam_cascade' : 'openai_realtime';
+    return engine === 'sarvam_cascade' && env.SARVAM_API_KEY ? 'sarvam_cascade' : 'openai_realtime';
 }
 
 function getVoiceBudgetLimitMs(env) {
@@ -724,6 +724,17 @@ async function fetchLangfusePrompt(env, promptName = LANGFUSE_PROMPT_NAME, assis
     // Return cached prompt if still valid
     if (cachedPrompt?.cacheKey === cacheKey && (now - cachedPromptTimestamp) < PROMPT_CACHE_TTL_MS) {
         return cachedPrompt;
+    }
+
+    if (!env.LANGFUSE_PUBLIC_KEY || !env.LANGFUSE_SECRET_KEY) {
+        const fallback = {
+            prompt: assistantMode === 'voice_context' ? buildFallbackVoicePrompt() : FALLBACK_SYSTEM_PROMPT,
+            version: 'fallback',
+            cacheKey
+        };
+        cachedPrompt = fallback;
+        cachedPromptTimestamp = now - PROMPT_CACHE_TTL_MS + 30000;
+        return fallback;
     }
 
     // Fetch from Langfuse
@@ -1005,7 +1016,7 @@ async function handleSarvamTurn(request, env, origin, ctx, ip) {
             });
         }
 
-        const context = String(inbound.get('context') || '').slice(0, 24000);
+        const context = `${buildServerVoiceFacts()}\n\n${String(inbound.get('context') || '')}`.slice(0, 24000);
         const history = parseJsonArray(inbound.get('conversationHistory')).slice(-8);
         const screenContext = parseJsonObject(inbound.get('screenContext'));
 
@@ -1068,6 +1079,14 @@ async function handleSarvamTurn(request, env, origin, ctx, ip) {
         const llmMs = Date.now() - llmStartMs;
 
         const ttsStartMs = Date.now();
+        const spokenText = tightenKnownSpokenAnswer(
+            trimSpokenForVoice(assistantResult.spoken, 240),
+            userText,
+            assistantResult.outputLanguage || sttData.language_code || 'en-IN'
+        );
+        const actions = assistantResult.actions.length
+            ? assistantResult.actions
+            : inferServerActions(userText, screenContext);
         const ttsLanguage = sarvamLanguageCode(assistantResult.outputLanguage || sttData.language_code || 'en-IN');
         const ttsResponse = await fetch(`${trimTrailingSlash(env.SARVAM_API_BASE_URL || SARVAM_API_BASE_URL)}/text-to-speech`, {
             method: 'POST',
@@ -1076,7 +1095,7 @@ async function handleSarvamTurn(request, env, origin, ctx, ip) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                text: assistantResult.spoken.slice(0, 700),
+                text: spokenText,
                 target_language_code: ttsLanguage,
                 speaker: env.SARVAM_TTS_SPEAKER || DEFAULT_SARVAM_TTS_SPEAKER,
                 model: env.SARVAM_TTS_MODEL || DEFAULT_SARVAM_TTS_MODEL,
@@ -1102,7 +1121,7 @@ async function handleSarvamTurn(request, env, origin, ctx, ip) {
                 userIp: await voiceIpHash(ip, env),
                 eventType: 'sarvam_turn_complete',
                 input: userText,
-                output: assistantResult.spoken,
+                output: spokenText,
                 metadata: {
                     assistant_mode: 'voice_context',
                     input_modality: 'voice',
@@ -1114,6 +1133,7 @@ async function handleSarvamTurn(request, env, origin, ctx, ip) {
                     total_turn_ms: Date.now() - turnStartedAt,
                     language_code: sttData.language_code || 'unknown',
                     sarvam_tts_language: ttsLanguage,
+                    action_types: actions.map(action => action.type).join(','),
                     voice_budget_remaining_ms: remainingAfterTurn.remainingMs
                 }
             }));
@@ -1126,8 +1146,8 @@ async function handleSarvamTurn(request, env, origin, ctx, ip) {
             languageCode: sttData.language_code || detectLanguageHint(userText),
             languageProbability: sttData.language_probability || null,
             transcript: assistantResult.transcript,
-            spoken: assistantResult.spoken,
-            actions: assistantResult.actions,
+            spoken: spokenText,
+            actions,
             followups: assistantResult.followups,
             audioBase64: Array.isArray(ttsData.audios) ? ttsData.audios[0] || '' : '',
             audioContentType: `audio/${env.SARVAM_TTS_OUTPUT_CODEC || DEFAULT_SARVAM_TTS_CODEC}`,
@@ -1441,6 +1461,18 @@ Recent conversation:
 ${conversationSummary || 'No previous turns in this session.'}`;
 }
 
+function buildServerVoiceFacts() {
+    return `--- current-portfolio-voice-facts ---
+Abhishek Singh is a Product Manager with 5.5 years at Jio across agentic AI assistants, voice-first onboarding, identity platforms, fintech, and 100M+ download commerce apps.
+JioMart Native App: Abhishek was end-to-end owner for JioMart native Android and iOS app experience, core user journeys, app performance, discovery, checkout-related improvements, and commerce scale. The portfolio highlights 100M+ downloads across JioMart native app ownership.
+JioMart specific work: foundational SSO / Identity platform for cross-app login, faster onboarding, and unified user profiles; contextual FAQs that reduced support tickets by 16%; homepage performance optimization; contextual top categories, brands, and suggestions that improved search engagement by 10% CTR; native app roadmap, PRDs, and 30+ feature releases across discovery, onboarding, checkout, and performance.
+Do not say Abhishek built a JioMart chatbot unless the user specifically asks about AI Smart Assistant or conversational AI work. JioMart work was commerce app, identity, discovery, support, checkout, performance, and roadmap ownership.
+AI Smart Assistant: Abhishek is spearheading 0-to-1 agentic AI assistant strategy across MCP skills, voice-first journeys, tool discovery, evaluation, and Bharat-scale workflows. The 50% improved AI use-case discovery metric belongs to AI Smart Assistant / agentic AI work.
+JioBlackRock: Abhishek worked on fintech onboarding, identity, consent, investment journey foundations, and financial product experiences.
+Training the long game: This means Abhishek's endurance and discipline outside work: Tata Mumbai Marathon finisher and training for Ladakh Half Marathon in Sep 2026.
+Experience answer: If asked how many years of Product Management experience Abhishek has, answer 5.5 years.`;
+}
+
 async function runStructuredVoiceAssistant(env, options) {
     const userMessage = String(options.userMessage || '').slice(0, MAX_MESSAGE_LENGTH);
     const context = String(options.context || '').slice(0, 24000);
@@ -1456,8 +1488,10 @@ async function runStructuredVoiceAssistant(env, options) {
 SARVAM CASCADED VOICE MODE:
 - The visitor may speak Hindi, English, or Hinglish from the first utterance.
 - Reply in the user's language style. Keep product names in English.
-- Spoken output must be conversational, short, and human. Do not use bullets or markdown.
+- Spoken output must be one short conversational answer under 220 characters. Do not use bullets, markdown, numbered lists, or a colon before a list.
+- Transcript may be slightly richer than spoken, but it must stay grounded in the portfolio facts.
 - Use the provided portfolio knowledge before refusing.
+- Never invent product details. If a product fact is not in the portfolio knowledge, do not mention it.
 - Treat Geomart, Geomath, Gio Mart, and Geo Mart as JioMart.`;
 
     const sanitizedHistory = history.map(msg => ({
@@ -1546,11 +1580,20 @@ function parseJsonObject(value) {
 function normalizeServerVoiceDomainTerms(message) {
     return String(message || '')
         .replace(/\b(geo\s?math|geo\s?mart|geomath|geomart|gio\s?mart|jio\s?mart)\b/gi, 'JioMart')
+        .replace(/(जियो\s?मार्ट|जीयो\s?मार्ट|जिओ\s?मार्ट|जाय\s?मार्ट|जाय\s?मत|जाया\s?मत|जियो\s?मत|जीओ\s?मार्ट|जिओमार्ट)/gi, 'JioMart')
         .replace(/\b(geo\s?black\s?rock|gio\s?black\s?rock|jio\s?black\s?rock|black\s?rock)\b/gi, 'JioBlackRock')
+        .replace(/(जियो\s?ब्लैक\s?रॉक|जिओ\s?ब्लैक\s?रॉक|जीओ\s?ब्लैक\s?रॉक|ब्लैक\s?रॉक)/gi, 'JioBlackRock')
         .replace(/\b(geo\s?platforms|gio\s?platforms|jio\s?platforms)\b/gi, 'Jio Platforms')
+        .replace(/(जियो\s?प्लेटफॉर्म्स|जिओ\s?प्लेटफॉर्म्स|जीओ\s?प्लेटफॉर्म्स)/gi, 'Jio Platforms')
         .replace(/\b(my\s?geo|my\s?gio|my\s?jio)\b/gi, 'MyJio')
+        .replace(/(माय\s?जियो|माय\s?जिओ|माय\s?जीओ)/gi, 'MyJio')
         .replace(/\b(geo\s?finance|gio\s?finance|jio\s?finance)\b/gi, 'JioFinance')
+        .replace(/(जियो\s?फाइनेंस|जिओ\s?फाइनेंस|जीओ\s?फाइनेंस)/gi, 'JioFinance')
         .replace(/\b(ai\s?smart\s?assistant|jio\s?assistant|geo\s?assistant|gio\s?assistant)\b/gi, 'AI Smart Assistant')
+        .replace(/(एआई\s?स्मार्ट\s?असिस्टेंट|एआई\s?असिस्टेंट|जियो\s?असिस्टेंट|जिओ\s?असिस्टेंट)/gi, 'AI Smart Assistant')
+        .replace(/\bmeen\b/gi, 'mein')
+        .replace(/मीन/g, 'में')
+        .replace(/काय/g, 'क्या')
         .replace(/\s+/g, ' ')
         .trim();
 }
@@ -1560,6 +1603,101 @@ function sarvamLanguageCode(language) {
     if (value.startsWith('hi') || value === 'hindi') return 'hi-IN';
     if (value.startsWith('en')) return 'en-IN';
     return 'en-IN';
+}
+
+function trimSpokenForVoice(text, maxChars = 360) {
+    const clean = String(text || '')
+        .replace(/[*_`#>-]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    const colonAt = clean.indexOf(':');
+    if (colonAt > 60 && colonAt < maxChars) {
+        return `${clean.slice(0, colonAt).trim()}.`;
+    }
+    if (clean.length <= maxChars) return clean;
+    const sentenceMatch = clean.slice(0, maxChars).match(/^([\s\S]*?[।.!?])\s/);
+    if (sentenceMatch?.[1]?.length > 80) return sentenceMatch[1].trim();
+    return `${clean.slice(0, maxChars).replace(/\s+\S*$/, '').trim()}...`;
+}
+
+function tightenKnownSpokenAnswer(spoken, userText, language) {
+    const query = normalizeServerVoiceDomainTerms(userText).toLowerCase();
+    const wantsHindi = sarvamLanguageCode(language) === 'hi-IN' || /[\u0900-\u097F]/.test(userText);
+    if (query.includes('jiomart')) {
+        return wantsHindi
+            ? 'Abhishek ने JioMart native app की roadmap ownership, SSO/Identity, discovery, checkout, performance और 30+ feature releases पर काम किया.'
+            : 'Abhishek owned JioMart native app roadmap, SSO and identity, discovery, checkout, performance, and 30 plus feature releases.';
+    }
+    if (query.includes('experience') || query.includes('years') || query.includes('kitna') || query.includes('कितना')) {
+        return wantsHindi
+            ? 'Abhishek के पास Product Management में करीब 5.5 years का experience है, mainly AI, fintech, identity और commerce products at Jio.'
+            : 'Abhishek has about 5.5 years of Product Management experience across AI, fintech, identity, and commerce products at Jio.';
+    }
+    if (query.includes('50%') || query.includes('ai use') || query.includes('use-case') || query.includes('use case')) {
+        return wantsHindi
+            ? '50% AI use-case discovery metric AI Smart Assistant work से जुड़ा है, जहाँ Abhishek agentic AI, MCP skills और tool discovery पर काम कर रहे हैं.'
+            : 'The 50% AI use-case discovery metric belongs to the AI Smart Assistant work across agentic AI, MCP skills, and tool discovery.';
+    }
+    if (query.includes('training the long game') || query.includes('long game') || query.includes('ladakh') || query.includes('marathon')) {
+        return wantsHindi
+            ? 'Training the long game Abhishek की endurance discipline को दिखाता है: Tata Mumbai Marathon finisher और Ladakh Half Marathon की training.'
+            : 'Training the long game reflects Abhishek’s endurance discipline: Tata Mumbai Marathon finisher and training for Ladakh Half Marathon.';
+    }
+    return spoken;
+}
+
+function inferServerActions(message, screenContext = {}) {
+    const query = normalizeServerVoiceDomainTerms(message).toLowerCase();
+    if (query.includes('resume') || query.includes('cv')) {
+        return [
+            { type: 'scrollTo', target: 'section.contact' },
+            { type: 'highlight', target: 'contact.resume' },
+            { type: 'downloadResume', target: 'contact.resume' }
+        ];
+    }
+    if (query.includes('contact') || query.includes('email') || query.includes('call')) {
+        return [
+            { type: 'scrollTo', target: 'section.contact' },
+            { type: 'highlight', target: 'contact.panel' }
+        ];
+    }
+    if (query.includes('impact') || query.includes('metric') || query.includes('number') || query.includes('numbers')) {
+        return [
+            { type: 'scrollTo', target: 'section.impact' },
+            { type: 'highlight', target: 'metric.aiDiscovery' }
+        ];
+    }
+    if (query.includes('fintech') || query.includes('finance') || query.includes('blackrock') || query.includes('jioblackrock')) {
+        return [
+            { type: 'scrollTo', target: 'section.work' },
+            { type: 'carouselTo', target: 'work.jioBlackRock', index: 1 },
+            { type: 'highlight', target: 'work.jioBlackRock' }
+        ];
+    }
+    if (query.includes('jiomart') || query.includes('commerce') || query.includes('mart')) {
+        return [
+            { type: 'scrollTo', target: 'section.work' },
+            { type: 'carouselTo', target: 'work.jioMart', index: 2 },
+            { type: 'highlight', target: 'work.jioMart' }
+        ];
+    }
+    if (query.includes('ai') || query.includes('assistant') || query.includes('voice') || query.includes('llm')) {
+        return [
+            { type: 'scrollTo', target: 'section.work' },
+            { type: 'carouselTo', target: 'work.aiAssistant', index: 0 },
+            { type: 'highlight', target: 'work.aiAssistant' }
+        ];
+    }
+    if (query.includes('experience') || query.includes('years') || query.includes('product management')) {
+        return [
+            { type: 'scrollTo', target: 'section.hero' },
+            { type: 'highlight', target: 'hero.brief' }
+        ];
+    }
+    if (query.includes('this') && screenContext?.currentSection) {
+        return [{ type: 'highlight', target: `section.${screenContext.currentSection}` }];
+    }
+    return [];
 }
 
 async function handleRealtimeLog(request, env, origin, ip) {

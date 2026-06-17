@@ -2067,6 +2067,12 @@
                     voiceBudgetLimitMs = Number(data.voiceBudgetLimitMs || 120000);
                     isVoiceBudgetExhausted = Boolean(data.voiceBudgetExhausted || voiceBudgetRemainingMs <= 0);
                     applyVoiceBudgetState();
+                    if (assistantMode === 'voice_context' && !isVoiceBudgetExhausted && !isRealtimeActive && !isSarvamVoiceActive) {
+                        updateVoiceStatus(
+                            liveVoiceEngine === 'sarvam_cascade' ? 'Sarvam Voice ready' : 'Live Voice ready',
+                            'Start once, then speak naturally. Interrupt anytime.'
+                        );
+                    }
                 } catch (error) {
                     liveVoiceEngine = 'openai_realtime';
                     isVoiceBudgetExhausted = false;
@@ -2202,11 +2208,20 @@
                 let normalized = String(message || '');
                 const replacements = [
                     [/\b(geo\s?math|geo\s?mart|geomath|geomart|gio\s?mart|jio\s?mart)\b/gi, 'JioMart'],
+                    [/(जियो\s?मार्ट|जीयो\s?मार्ट|जिओ\s?मार्ट|जाय\s?मार्ट|जाय\s?मत|जाया\s?मत|जियो\s?मत|जीओ\s?मार्ट|जिओमार्ट)/gi, 'JioMart'],
                     [/\b(geo\s?black\s?rock|gio\s?black\s?rock|jio\s?black\s?rock|black\s?rock)\b/gi, 'JioBlackRock'],
+                    [/(जियो\s?ब्लैक\s?रॉक|जिओ\s?ब्लैक\s?रॉक|जीओ\s?ब्लैक\s?रॉक|ब्लैक\s?रॉक)/gi, 'JioBlackRock'],
                     [/\b(geo\s?platforms|gio\s?platforms|jio\s?platforms)\b/gi, 'Jio Platforms'],
+                    [/(जियो\s?प्लेटफॉर्म्स|जिओ\s?प्लेटफॉर्म्स|जीओ\s?प्लेटफॉर्म्स)/gi, 'Jio Platforms'],
                     [/\b(my\s?geo|my\s?gio|my\s?jio)\b/gi, 'MyJio'],
+                    [/(माय\s?जियो|माय\s?जिओ|माय\s?जीओ)/gi, 'MyJio'],
                     [/\b(geo\s?finance|gio\s?finance|jio\s?finance)\b/gi, 'JioFinance'],
-                    [/\b(ai\s?smart\s?assistant|jio\s?assistant|geo\s?assistant|gio\s?assistant)\b/gi, 'AI Smart Assistant']
+                    [/(जियो\s?फाइनेंस|जिओ\s?फाइनेंस|जीओ\s?फाइनेंस)/gi, 'JioFinance'],
+                    [/\b(ai\s?smart\s?assistant|jio\s?assistant|geo\s?assistant|gio\s?assistant)\b/gi, 'AI Smart Assistant'],
+                    [/(एआई\s?स्मार्ट\s?असिस्टेंट|एआई\s?असिस्टेंट|जियो\s?असिस्टेंट|जिओ\s?असिस्टेंट)/gi, 'AI Smart Assistant'],
+                    [/\bmeen\b/gi, 'mein'],
+                    [/मीन/g, 'में'],
+                    [/काय/g, 'क्या']
                 ];
                 replacements.forEach(([pattern, canonical]) => {
                     normalized = normalized.replace(pattern, canonical);
@@ -2946,7 +2961,10 @@ Experience answer: If asked how many years of Product Management experience Abhi
                     const userText = normalizeVoiceDomainTerms(data.userText || '');
                     if (userText) appendRealtimeMessage(userText, 'user');
                     appendRealtimeMessage(data.transcript || data.spoken || '', 'assistant');
-                    executeAssistantActions(Array.isArray(data.actions) ? data.actions : inferLocalActions(userText));
+                    const sarvamActions = Array.isArray(data.actions) && data.actions.length
+                        ? data.actions
+                        : inferLocalActions(userText);
+                    executeAssistantActions(sarvamActions);
                     playSarvamAudio(data.audioBase64, data.audioContentType, data.spoken || data.transcript || '', data.languageCode);
                 } catch (error) {
                     console.error('[Sarvam Voice] turn failed:', error);

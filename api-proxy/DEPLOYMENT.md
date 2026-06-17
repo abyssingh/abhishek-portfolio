@@ -18,6 +18,43 @@ Browser → Cloudflare Worker (has API keys) → Groq/OpenAI speech APIs
 
 ## Deployment Steps (5 minutes, no CLI needed)
 
+## Local Testing Before Production
+
+Run the portfolio and Worker together locally:
+
+```bash
+cp .env.local.example .env.local
+# Fill GROQ_API_KEY, SARVAM_API_KEY, and optionally OPENAI_API_KEY in .env.local
+node api-proxy/local-dev.mjs
+```
+
+Open:
+
+```txt
+http://127.0.0.1:8787/index.html
+```
+
+The page already points local API calls to `http://localhost:8787`, so no frontend URL change is needed.
+
+Useful local checks:
+
+```bash
+curl -X POST http://127.0.0.1:8787/voice/config \
+  -H 'Origin: http://localhost:8787' \
+  -H 'Content-Type: application/json' \
+  --data '{}'
+```
+
+For Sarvam local testing, set:
+
+```env
+LIVE_VOICE_ENGINE=sarvam_cascade
+GROQ_API_KEY=...
+SARVAM_API_KEY=...
+```
+
+If `LIVE_VOICE_ENGINE=sarvam_cascade` is set without `SARVAM_API_KEY`, the Worker falls back to `openai_realtime` instead of sending the browser into a broken Sarvam path.
+
 ### 1. Create a Cloudflare Account
 Go to [dash.cloudflare.com](https://dash.cloudflare.com) → Sign up (free)
 
